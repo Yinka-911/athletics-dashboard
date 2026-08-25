@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Training Session — Track Coaching Assistant</title>
+
+  <style>
+    :root {
+      --ink: #EDEDEF;
+      --ink-dim: #9A9AA5;
+      --bg: #15151A;
+      --bg-raised: #1D1D24;
+      --line: #2B2B34;
+      --cinder: #C1442E;
+      --amber: #F2A93B;
+      --live-green: #4CAF6D;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 28px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .brand .mark {
+      font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--cinder);
+      letter-spacing: 0.04em;
+    }
+
+    .brand h1 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--ink-dim);
+    }
+
+    .status .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--ink-dim);
+    }
+
+    .status.connected .dot {
+      background: var(--live-green);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 109, 0.5);
+      }
+
+      70% {
+        box-shadow: 0 0 0 8px rgba(76, 175, 109, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 109, 0);
+      }
+    }
+
+    main {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 32px 24px 64px;
+    }
+
+    /* ---- Login ---- */
+
+    #loginView {
+      max-width: 360px;
+      margin: 80px auto 0;
+      padding: 32px;
+      background: var(--bg-raised);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+
+    #loginView h2 {
+      margin-top: 0;
+      font-size: 1.15rem;
+    }
+
+    #loginView label {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--ink-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 16px 0 6px;
+    }
+
+    #loginView input {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--ink);
+      font-size: 0.95rem;
+      font-family: inherit;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 11px 20px;
+      border-radius: 6px;
+      border: none;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: var(--cinder);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: #A83A26;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--ink-dim);
+      border: 1px solid var(--line);
+    }
+
+    .btn-outline:hover {
+      color: var(--ink);
+      border-color: var(--ink-dim);
+    }
+
+    .btn-end {
+      background: transparent;
+      color: var(--cinder);
+      border: 1px solid var(--cinder);
+    }
+
+    .btn-end:hover {
+      background: rgba(193, 68, 46, 0.1);
+    }
+
+    #loginBtn {
+      width: 100%;
+      margin-top: 22px;
+    }
+
+    #loginError {
+      color: var(--cinder);
+      font-size: 0.85rem;
+      margin-top: 12px;
+      min-height: 1.2em;
+    }
+
+    /* ---- App ---- */
+
+    #appView {
+      display: none;
+    }
+
+    .top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+
+    .athlete-name {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .athlete-sub {
+      color: var(--ink-dim);
+      font-size: 0.85rem;
+      margin-top: 2px;
+    }
+
+    .session-panel {
+      background: var(--bg-raised);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 24px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .session-panel .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 14px;
+      border: 1px solid var(--line);
+      color: var(--ink-dim);
+    }
+
+    .session-panel .badge.live {
+      color: var(--live-green);
+      border-color: var(--live-green);
+    }
+
+    .rep-count {
+      font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+      font-size: 2.4rem;
+      font-weight: 700;
+      margin: 4px 0;
+    }
+
+    .rep-count-label {
+      color: var(--ink-dim);
+      font-size: 0.8rem;
+    }
+
+    .cue-status {
+      margin-top: 14px;
+      font-size: 0.8rem;
+      color: var(--amber);
+      min-height: 1.2em;
+    }
+
+    .lanes {
+      border-top: 2px solid var(--cinder);
+      margin-top: 8px;
+    }
+
+    .rep-row {
+      display: grid;
+      grid-template-columns: 44px 1fr auto;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 4px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+    }
+
+    .rep-num {
+      font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+      color: var(--amber);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .rep-rest {
+      color: var(--ink-dim);
+      font-size: 0.8rem;
+      margin-top: 2px;
+    }
+
+    .rep-time {
+      font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+      font-size: 1.3rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--ink-dim);
+      font-size: 0.9rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 24px;
+      color: var(--ink-dim);
+      font-size: 0.78rem;
+    }
+  </style>
+
+</head>
+
+<body>
+
+  <header>
+    <div class="brand">
+      <span class="mark">⟨/⟩</span>
+      <h1>Training Session</h1>
+    </div>
+
+```
+<div class="status" id="connectionStatus">
+  <span class="dot"></span>
+  <span id="connectionLabel">Connecting…</span>
+</div>
+```
+
+  </header>
+
+  <main>
+
+```
+<!-- LOGIN VIEW -->
+<div id="loginView">
+  <h2>Athlete login</h2>
+
+  <label for="email">Email</label>
+  <input
+    id="email"
+    type="email"
+    autocomplete="username"
+    placeholder="you@example.com"
+  >
+
+  <label for="password">Password</label>
+  <input
+    id="password"
+    type="password"
+    autocomplete="current-password"
+    placeholder="••••••••"
+  >
+
+  <button class="btn btn-primary" id="loginBtn">
+    Log in
+  </button>
+
+  <div id="loginError"></div>
+</div>
+
+<!-- APP VIEW -->
+<div id="appView">
+
+  <div class="top-row">
+    <div>
+      <p class="athlete-name" id="athleteName">—</p>
+      <p class="athlete-sub" id="athleteEmail">—</p>
+    </div>
+
+    <button class="btn btn-outline" id="logoutBtn">
+      Log out
+    </button>
+  </div>
+
+  <div class="session-panel" id="sessionPanel">
+    <!-- populated by JavaScript -->
+  </div>
+
+  <div class="lanes" id="repsList"></div>
+
+</div>
+```
+
+  </main>
+
+  <footer>
+    IoT Athletics Track Coaching Assistant — session control &amp; live monitor
+  </footer>
+
+  <script type="module">
+
+    // ================================================================
+    // FIREBASE SETUP
+    // ================================================================
+
+    import {
+      initializeApp
+    } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+
+    import {
+      getDatabase,
+      ref,
+      onValue,
+      set,
+      update,
+      push,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      signOut,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAlYe_Gmmy8B9mxCgVo5PdIZ4y1tndyCis",
+      authDomain: "athletics-coach-d0b26.firebaseapp.com",
+      databaseURL:
+        "https://athletics-coach-d0b26-default-rtdb.europe-west1.firebasedatabase.app/",
+      projectId: "athletics-coach-d0b26"
+    };
+
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const database = getDatabase(app);
+
+
+    // ================================================================
+    // DOM REFERENCES
+    // ================================================================
+
+    const loginView = document.getElementById("loginView");
+    const appView = document.getElementById("appView");
+
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const loginBtn = document.getElementById("loginBtn");
+    const loginError = document.getElementById("loginError");
+
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    const athleteName = document.getElementById("athleteName");
+    const athleteEmail = document.getElementById("athleteEmail");
+
+    const sessionPanel = document.getElementById("sessionPanel");
+    const repsList = document.getElementById("repsList");
+
+    const connectionStatus =
+      document.getElementById("connectionStatus");
+
+    const connectionLabel =
+      document.getElementById("connectionLabel");
+
+
+    // ================================================================
+    // SESSION / LISTENER STATE
+    // ================================================================
+
+    let currentUid = null;
+    let activeSessionId = null;
+
+    let repsUnsub = null;
+    let statusUnsub = null;
+    let sessionsUnsub = null;
+
+    let lastStatus = null;
+
+
+    // ================================================================
+    // AUDIO
+    // ================================================================
+
+    let audioContext = null;
+
+
+    function unlockAudio() {
+      if (!audioContext) {
+        const AudioContextClass =
+          window.AudioContext || window.webkitAudioContext;
+
+        if (AudioContextClass) {
+          audioContext = new AudioContextClass();
+        }
+      }
+
+      if (audioContext && audioContext.state === "suspended") {
+        audioContext.resume();
+      }
+    }
+
+
+    function playTone(
+      frequency = 880,
+      duration = 0.18,
+      delay = 0
+    ) {
+      if (!audioContext) {
+        unlockAudio();
+      }
+
+      if (!audioContext) {
+        return;
+      }
+
+      const startTime =
+        audioContext.currentTime + delay;
+
+      const oscillator =
+        audioContext.createOscillator();
+
+      const gain =
+        audioContext.createGain();
+
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(
+        frequency,
+        startTime
+      );
+
+      gain.gain.setValueAtTime(
+        0.0001,
+        startTime
+      );
+
+      gain.gain.exponentialRampToValueAtTime(
+        0.25,
+        startTime + 0.01
+      );
+
+      gain.gain.exponentialRampToValueAtTime(
+        0.0001,
+        startTime + duration
+      );
+
+      oscillator.connect(gain);
+      gain.connect(audioContext.destination);
+
+      oscillator.start(startTime);
+      oscillator.stop(startTime + duration + 0.02);
+    }
+
+
+    function speak(text) {
+      if (!("speechSynthesis" in window)) {
+        return;
+      }
+
+      window.speechSynthesis.cancel();
+
+      const utterance =
+        new SpeechSynthesisUtterance(text);
+
+      utterance.rate = 1.15;
+      utterance.pitch = 1.1;
+      utterance.volume = 1;
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+
+    function playGoCue() {
+      // Two short tones followed by the spoken GO cue.
+      playTone(880, 0.12, 0);
+      playTone(1175, 0.20, 0.15);
+
+      setTimeout(() => {
+        speak("Go!");
+      }, 350);
+    }
+
+
+    function playReadyCue() {
+      playTone(660, 0.18, 0);
+      speak("Get ready");
+    }
+
+
+    function playRestCue() {
+      playTone(440, 0.18, 0);
+      speak("Rest");
+    }
+
+
+    function playFinishedCue() {
+      playTone(660, 0.12, 0);
+      playTone(880, 0.12, 0.15);
+      playTone(1047, 0.25, 0.30);
+
+      setTimeout(() => {
+        speak("Session finished");
+      }, 550);
+    }
+
+
+    // ================================================================
+    // CONNECTION INDICATOR
+    // ================================================================
+
+    onValue(
+      ref(database, ".info/connected"),
+      (snap) => {
+        const connected = snap.val() === true;
+
+        connectionStatus.classList.toggle(
+          "connected",
+          connected
+        );
+
+        connectionLabel.textContent =
+          connected ? "Live" : "Connecting…";
+      }
+    );
+
+
+    // ================================================================
+    // AUTHENTICATION
+    // ================================================================
+
+    loginBtn.addEventListener(
+      "click",
+      async () => {
+
+        loginError.textContent = "";
+
+        try {
+          await signInWithEmailAndPassword(
+            auth,
+            emailInput.value.trim(),
+            passwordInput.value
+          );
+
+        } catch (err) {
+          console.error(err);
+
+          loginError.textContent =
+            "Login failed — check email and password.";
+        }
+      }
+    );
+
+
+    logoutBtn.addEventListener(
+      "click",
+      () => signOut(auth)
+    );
+
+
+    onAuthStateChanged(
+      auth,
+      (user) => {
+
+        // Clean up old listeners.
+        cleanupSessionListeners();
+
+        if (sessionsUnsub) {
+          sessionsUnsub();
+          sessionsUnsub = null;
+        }
+
+
+        if (!user) {
+
+          currentUid = null;
+          activeSessionId = null;
+          lastStatus = null;
+
+          loginView.style.display = "block";
+          appView.style.display = "none";
+
+          return;
+        }
+
+
+        currentUid = user.uid;
+
+        loginView.style.display = "none";
+        appView.style.display = "block";
+
+
+        const displayName =
+          user.email.split("@")[0];
+
+        athleteName.textContent =
+          displayName;
+
+        athleteEmail.textContent =
+          user.email;
+
+
+        // Upsert athlete profile for the coaching app.
+        update(
+          ref(database, `athletes/${user.uid}`),
+          {
+            name: displayName,
+            email: user.email
+          }
+        );
+
+
+        watchForActiveSession(user.uid);
+      }
+    );
+
+
+    // ================================================================
+    // SESSION STATE
+    // ================================================================
+
+    function isLiveSessionStatus(status) {
+      return [
+        "active",
+        "get_ready",
+        "go",
+        "resting"
+      ].includes(status);
+    }
+
+
+    function watchForActiveSession(uid) {
+
+      if (sessionsUnsub) {
+        sessionsUnsub();
+        sessionsUnsub = null;
+      }
+
+
+      sessionsUnsub = onValue(
+        ref(database, `sessions/${uid}`),
+        (snapshot) => {
+
+          const sessions =
+            snapshot.val() || {};
+
+
+          // IMPORTANT:
+          // The ESP32 can change status from "active" to
+          // "get_ready", "go", or "resting".
+          //
+          // All of these still mean that the training session
+          // is currently live.
+          const liveEntry =
+            Object.entries(sessions)
+              .find(([, session]) =>
+                isLiveSessionStatus(session.status)
+              );
+
+
+          if (liveEntry) {
+
+            const sessionId =
+              liveEntry[0];
+
+            const sessionData =
+              liveEntry[1];
+
+
+            // Only re-render / attach listeners if this is a
+            // different session.
+            if (activeSessionId !== sessionId) {
+
+              activeSessionId = sessionId;
+              lastStatus = null;
+
+              renderActiveSession(
+                uid,
+                sessionId,
+                sessionData
+              );
+
+            } else {
+
+              // Same session: update the visible cue text.
+              updateCueDisplay(
+                sessionData.status
+              );
+            }
+
+          } else {
+
+            activeSessionId = null;
+            lastStatus = null;
+
+            renderNoActiveSession();
+          }
+        }
+      );
+    }
+
+
+    // ================================================================
+    // RENDER: NO ACTIVE SESSION
+    // ================================================================
+
+    function renderNoActiveSession() {
+
+      cleanupSessionListeners();
+
+
+      sessionPanel.innerHTML = `
+        <span class="badge">no active session</span>
+
+        <div
+          class="rep-count-label"
+          style="margin-bottom:16px;"
+        >
+          Start a session before training begins.
+        </div>
+
+        <button
+          class="btn btn-primary"
+          id="beginBtn"
+        >
+          Begin session
+        </button>
+      `;
+
+
+      document
+        .getElementById("beginBtn")
+        .addEventListener(
+          "click",
+          () => {
+
+            // This user interaction unlocks browser audio.
+            unlockAudio();
+
+            beginSession();
+          }
+        );
+
+
+      repsList.innerHTML = "";
+    }
+
+
+    // ================================================================
+    // RENDER: ACTIVE SESSION
+    // ================================================================
+
+    function renderActiveSession(
+      uid,
+      sessionId,
+      sessionData
+    ) {
+
+      sessionPanel.innerHTML = `
+        <span class="badge live">
+          session live
+        </span>
+
+        <div
+          class="rep-count"
+          id="repCount"
+        >
+          0
+        </div>
+
+        <div class="rep-count-label">
+          rep(s) completed
+        </div>
+
+        <div
+          class="cue-status"
+          id="cueStatus"
+        >
+          Current status: ${sessionData.status || "active"}
+        </div>
+
+        <button
+          class="btn btn-end"
+          id="endBtn"
+          style="margin-top:18px;"
+        >
+          End session
+        </button>
+      `;
+
+
+      document
+        .getElementById("endBtn")
+        .addEventListener(
+          "click",
+          endSession
+        );
+
+
+      watchReps(
+        uid,
+        sessionId
+      );
+
+
+      watchSessionStatus(
+        uid,
+        sessionId
+      );
+    }
+
+
+    // ================================================================
+    // REP LISTENER
+    // ================================================================
+
+    function watchReps(
+      uid,
+      sessionId
+    ) {
+
+      if (repsUnsub) {
+        repsUnsub();
+        repsUnsub = null;
+      }
+
+
+      const repsRef =
+        ref(
+          database,
+          `sessions/${uid}/${sessionId}/reps`
+        );
+
+
+      repsUnsub = onValue(
+        repsRef,
+        (snapshot) => {
+
+          const reps =
+            snapshot.val() || {};
+
+
+          const repIds =
+            Object.keys(reps)
+              .sort(
+                (a, b) =>
+                  Number(a) - Number(b)
+              );
+
+
+          const countEl =
+            document.getElementById("repCount");
+
+
+          if (countEl) {
+            countEl.textContent =
+              repIds.length;
+          }
+
+
+          if (repIds.length === 0) {
+
+            repsList.innerHTML = `
+              <div class="empty-state">
+                Waiting on the timing box for
+                the first rep…
+              </div>
+            `;
+
+            return;
+          }
+
+
+          repsList.innerHTML =
+            repIds
+              .map((id) => {
+
+                const rep =
+                  reps[id];
+
+
+                const restNote =
+                  rep.restBefore != null &&
+                  Number(rep.restBefore) > 0
+
+                    ? `${Number(rep.restBefore).toFixed(0)}s rest before this rep`
+
+                    : "first rep";
+
+
+                return `
+                  <div class="rep-row">
+
+                    <span class="rep-num">
+                      #${Number(id) + 1}
+                    </span>
+
+                    <div>
+                      <div class="rep-rest">
+                        ${restNote}
+                      </div>
+                    </div>
+
+                    <span class="rep-time">
+                      ${Number(rep.time).toFixed(2)}s
+                    </span>
+
+                  </div>
+                `;
+              })
+              .join("");
+        }
+      );
+    }
+
+
+    // ================================================================
+    // STATUS LISTENER + AUDIO CUES
+    // ================================================================
+
+    function watchSessionStatus(
+      uid,
+      sessionId
+    ) {
+
+      if (statusUnsub) {
+        statusUnsub();
+        statusUnsub = null;
+      }
+
+
+      const statusRef =
+        ref(
+          database,
+          `sessions/${uid}/${sessionId}/status`
+        );
+
+
+      statusUnsub = onValue(
+        statusRef,
+        (snapshot) => {
+
+          const newStatus =
+            snapshot.val();
+
+
+          if (!newStatus) {
+            return;
+          }
+
+
+          updateCueDisplay(newStatus);
+
+
+          // Do not play the same cue repeatedly.
+          if (newStatus === lastStatus) {
+            return;
+          }
+
+
+          console.log(
+            "Session status changed:",
+            lastStatus,
+            "→",
+            newStatus
+          );
+
+
+          lastStatus =
+            newStatus;
+
+
+          switch (newStatus) {
+
+            case "get_ready":
+              playReadyCue();
+              break;
+
+            case "go":
+              playGoCue();
+              break;
+
+            case "resting":
+              playRestCue();
+              break;
+
+            case "finished":
+              playFinishedCue();
+              break;
+
+            case "active":
+              // No sound for the initial session state.
+              break;
+
+            default:
+              console.log(
+                "No audio cue configured for:",
+                newStatus
+              );
+          }
+        }
+      );
+    }
+
+
+    function updateCueDisplay(status) {
+
+      const cueStatus =
+        document.getElementById("cueStatus");
+
+
+      if (cueStatus) {
+
+        cueStatus.textContent =
+          `Current status: ${status}`;
+      }
+    }
+
+
+    function cleanupSessionListeners() {
+
+      if (repsUnsub) {
+        repsUnsub();
+        repsUnsub = null;
+      }
+
+
+      if (statusUnsub) {
+        statusUnsub();
+        statusUnsub = null;
+      }
+    }
+
+
+    // ================================================================
+    // SESSION ACTIONS
+    // ================================================================
+
+    async function beginSession() {
+
+      // Ensure audio is unlocked while handling the button click.
+      unlockAudio();
+
+
+      const newRef =
+        push(
+          ref(
+            database,
+            `sessions/${currentUid}`
+          )
+        );
+
+
+      await set(
+        newRef,
+        {
+          status: "active",
+          startedAt: serverTimestamp()
+        }
+      );
+    }
+
+
+    async function endSession() {
+
+      if (
+        !currentUid ||
+        !activeSessionId
+      ) {
+        return;
+      }
+
+
+      await update(
+        ref(
+          database,
+          `sessions/${currentUid}/${activeSessionId}`
+        ),
+        {
+          status: "completed",
+          endedAt: serverTimestamp()
+        }
+      );
+    }
+
+  </script>
+
+</body>
+</html>
