@@ -1128,14 +1128,14 @@ function cleanupSessionListeners() {
 
 
 // ================================================================
-// CREATE SESSION
+// CREATE & END SESSION
 // ================================================================
 
 async function beginSession(boxId = "BOX_01") {
   currentBoxId = boxId;
 
   try {
-    // 1. Create session for the athlete
+    // 1. Create a new session for the athlete
     const newRef = push(ref(database, `sessions/${currentUid}`));
     const newSessionId = newRef.key;
 
@@ -1145,39 +1145,32 @@ async function beginSession(boxId = "BOX_01") {
       startedAt: serverTimestamp()
     });
 
-    // 2. Link timing box in Firebase using all-caps key
-    await set(ref(database, `boxes/${boxId}`), {
-      activeUid: currentUid,
-      activeSessionId: newSessionId,
-      updatedAt: serverTimestamp()
+    // 2. Write to the exact path and key structure expected by the ESP32
+    await set(ref(database, `devices/${boxId}/active_session`), {
+      uid: currentUid,
+      sessionId: newSessionId
     });
 
-    console.log(`Successfully paired ${boxId} with session ${newSessionId}`);
+    console.log(`Successfully paired ${boxId} -> UID: ${currentUid} | Session: ${newSessionId}`);
   } catch (err) {
     console.error("Firebase write error during beginSession:", err);
   }
 }
 
-
-// ================================================================
-// END SESSION
-// ================================================================
-
 async function endSession() {
   if (!currentUid || !activeSessionId) return;
 
-  // 1. Mark session as completed
+  // 1. Mark session as completed in session history
   await update(ref(database, `sessions/${currentUid}/${activeSessionId}`), {
     status: "completed",
     endedAt: serverTimestamp()
   });
 
-  // 2. Unlink the physical timing box so it returns to standby
+  // 2. Clear the active session on the ESP32 device node
   if (currentBoxId) {
-    await update(ref(database, `boxes/${currentBoxId}`), {
-      activeUid: null,
-      activeSessionId: null,
-      updatedAt: serverTimestamp()
+    await set(ref(database, `devices/${currentBoxId}/active_session`), {
+      uid: "",
+      sessionId: ""
     });
     currentBoxId = null;
   }
