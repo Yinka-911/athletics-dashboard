@@ -1840,6 +1840,22 @@ async function beginSession() {
         serverTimestamp()
     }
   );
+
+
+  // Point the timing box at this session[cite: 1]
+  await set(
+    ref(
+      database,
+      "devices/BOX_01/active_session"
+    ),
+    {
+      sessionId:
+        newRef.key,
+
+      uid:
+        currentUid
+    }
+  );
 }
 
 
@@ -1869,6 +1885,22 @@ async function endSession() {
 
       endedAt:
         serverTimestamp()
+    }
+  );
+
+
+  // Clear the device pointer[cite: 1]
+  await set(
+    ref(
+      database,
+      "devices/BOX_01/active_session"
+    ),
+    {
+      sessionId:
+        "",
+
+      uid:
+        ""
     }
   );
 }
