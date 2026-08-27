@@ -1134,22 +1134,28 @@ function cleanupSessionListeners() {
 async function beginSession(boxId = "Box_01") {
   currentBoxId = boxId;
 
-  // 1. Create a new session for the athlete
-  const newRef = push(ref(database, `sessions/${currentUid}`));
-  const newSessionId = newRef.key;
+  try {
+    // 1. Create session for the athlete
+    const newRef = push(ref(database, `sessions/${currentUid}`));
+    const newSessionId = newRef.key;
 
-  await set(newRef, {
-    status: "active",
-    boxId: boxId,
-    startedAt: serverTimestamp()
-  });
+    await set(newRef, {
+      status: "active",
+      boxId: boxId,
+      startedAt: serverTimestamp()
+    });
 
-  // 2. Map the physical timing box to this active athlete & session
-  await set(ref(database, `boxes/${boxId}`), {
-    activeUid: currentUid,
-    activeSessionId: newSessionId,
-    updatedAt: serverTimestamp()
-  });
+    // 2. Link timing box in Firebase
+    await set(ref(database, `boxes/${boxId}`), {
+      activeUid: currentUid,
+      activeSessionId: newSessionId,
+      updatedAt: serverTimestamp()
+    });
+
+    console.log(`Successfully paired ${boxId} with session ${newSessionId}`);
+  } catch (err) {
+    console.error("Firebase write error during beginSession:", err);
+  }
 }
 
 
