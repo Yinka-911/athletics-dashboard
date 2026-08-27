@@ -1,342 +1,1881 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Athletics Timing Dashboard</title>
 
-  <!-- Firebase v9 Compat SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>
+    Training Session — Track Coaching Assistant
+  </title>
+
 
   <style>
+
     :root {
-      --bg-color: #0f172a;
-      --card-bg: #1e293b;
-      --text-color: #f8fafc;
-      --accent-color: #38bdf8;
-      --accent-green: #22c55e;
-      --accent-yellow: #eab308;
-      --accent-red: #ef4444;
-      --border-color: #334155;
+      --ink: #EDEDEF;
+      --ink-dim: #9A9AA5;
+      --bg: #15151A;
+      --bg-raised: #1D1D24;
+      --line: #2B2B34;
+      --cinder: #C1442E;
+      --amber: #F2A93B;
+      --live-green: #4CAF6D;
     }
+
 
     * {
       box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     }
+
 
     body {
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        sans-serif;
       min-height: 100vh;
-      padding: 20px;
     }
 
+
     header {
-      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 28px;
+      border-bottom: 1px solid var(--line);
+    }
+
+
+    .brand {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+
+    .brand .mark {
+      font-family:
+        "SF Mono",
+        "JetBrains Mono",
+        ui-monospace,
+        monospace;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--cinder);
+      letter-spacing: 0.04em;
+    }
+
+
+    .brand h1 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 0;
+    }
+
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--ink-dim);
+    }
+
+
+    .status .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--ink-dim);
+    }
+
+
+    .status.connected .dot {
+      background: var(--live-green);
+      animation: pulse 2s infinite;
+    }
+
+
+    @keyframes pulse {
+
+      0% {
+        box-shadow:
+          0 0 0 0 rgba(
+            76,
+            175,
+            109,
+            0.5
+          );
+      }
+
+      70% {
+        box-shadow:
+          0 0 0 8px rgba(
+            76,
+            175,
+            109,
+            0
+          );
+      }
+
+      100% {
+        box-shadow:
+          0 0 0 0 rgba(
+            76,
+            175,
+            109,
+            0
+          );
+      }
+
+    }
+
+
+    main {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 32px 24px 64px;
+    }
+
+
+    #loginView {
+      max-width: 360px;
+      margin: 80px auto 0;
+      padding: 32px;
+      background: var(--bg-raised);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+
+
+    #loginView h2 {
+      margin-top: 0;
+      font-size: 1.15rem;
+    }
+
+
+    #loginView label {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--ink-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 16px 0 6px;
+    }
+
+
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 7px;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      color: var(--ink);
+      outline: none;
+      font-size: 0.95rem;
+    }
+
+
+    input:focus {
+      border-color: var(--cinder);
+    }
+
+
+    .btn {
+      border: none;
+      border-radius: 7px;
+      padding: 11px 16px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 18px;
+    }
+
+
+    .btn-primary {
+      background: var(--cinder);
+      color: white;
+    }
+
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--ink);
+    }
+
+
+    .btn-end {
+      background: #4A2521;
+      color: #FFB7AA;
+    }
+
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+
+    #loginError {
+      margin-top: 14px;
+      color: #FF8F80;
+      font-size: 0.84rem;
+    }
+
+
+    #appView {
+      display: none;
+    }
+
+
+    .top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
       margin-bottom: 24px;
     }
 
-    h1 {
-      font-size: 1.8rem;
-      color: var(--accent-color);
-      margin-bottom: 6px;
-    }
 
-    .subhead {
-      font-size: 0.9rem;
-      color: #94a3b8;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 600px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .card {
-      background-color: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-    }
-
-    .btn-audio {
-      width: 100%;
-      padding: 14px;
-      font-size: 1rem;
-      font-weight: 600;
-      color: #0f172a;
-      background-color: var(--accent-color);
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-    }
-
-    .btn-audio.active {
-      background-color: var(--accent-green);
-      color: #ffffff;
-    }
-
-    .status-box {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      text-align: center;
-    }
-
-    .status-label {
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #94a3b8;
-      margin-bottom: 8px;
-    }
-
-    .status-badge {
-      font-size: 1.6rem;
+    .athlete-name {
+      margin: 0;
+      font-size: 1.1rem;
       font-weight: 700;
+    }
+
+
+    .athlete-sub {
+      margin: 4px 0 0;
+      color: var(--ink-dim);
+      font-size: 0.82rem;
+    }
+
+
+    .session-panel {
+      padding: 24px;
+      background: var(--bg-raised);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+
+
+    .badge {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: #292931;
+      color: var(--ink-dim);
+      font-size: 0.72rem;
       text-transform: uppercase;
-      padding: 8px 20px;
-      border-radius: 20px;
-      background-color: var(--border-color);
-      color: var(--text-color);
-      letter-spacing: 0.5px;
+      letter-spacing: 0.06em;
     }
 
-    .status-badge.get_ready { background-color: var(--accent-yellow); color: #0f172a; }
-    .status-badge.go { background-color: var(--accent-green); color: #ffffff; }
-    .status-badge.resting { background-color: var(--accent-color); color: #0f172a; }
-    .status-badge.stopped { background-color: var(--accent-red); color: #ffffff; }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
+    .badge.live {
+      background: #1F3527;
+      color: #8DDAA5;
     }
 
-    th, td {
-      padding: 12px 16px;
-      text-align: left;
-      border-bottom: 1px solid var(--border-color);
+
+    .rep-count {
+      margin-top: 18px;
+      font-family:
+        "SF Mono",
+        "JetBrains Mono",
+        ui-monospace,
+        monospace;
+      font-size: 3.2rem;
+      font-weight: 700;
+      line-height: 1;
     }
 
-    th {
+
+    .rep-count-label {
+      margin-top: 7px;
+      color: var(--ink-dim);
+      font-size: 0.82rem;
+    }
+
+
+    .cue-status {
+      margin-top: 20px;
+      padding: 11px 13px;
+      background: #18181D;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      font-family:
+        "SF Mono",
+        "JetBrains Mono",
+        ui-monospace,
+        monospace;
       font-size: 0.8rem;
-      text-transform: uppercase;
-      color: #94a3b8;
-      letter-spacing: 0.5px;
     }
 
-    td {
-      font-size: 1rem;
-      font-weight: 500;
+
+    .lanes {
+      margin-top: 18px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
     }
 
-    tr:last-child td {
+
+    .rep-row {
+      display: grid;
+      grid-template-columns:
+        60px
+        1fr
+        auto;
+      gap: 14px;
+      align-items: center;
+      padding: 17px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+
+    .rep-row:last-child {
       border-bottom: none;
     }
 
+
+    .rep-num {
+      font-family:
+        "SF Mono",
+        "JetBrains Mono",
+        ui-monospace,
+        monospace;
+      font-weight: 700;
+    }
+
+
+    .rep-rest {
+      color: var(--ink-dim);
+      font-size: 0.8rem;
+    }
+
+
+    .rep-time {
+      font-family:
+        "SF Mono",
+        "JetBrains Mono",
+        ui-monospace,
+        monospace;
+      font-size: 1.3rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+
     .empty-state {
       text-align: center;
-      color: #64748b;
-      padding: 20px;
+      padding: 40px 20px;
+      color: var(--ink-dim);
+      font-size: 0.9rem;
     }
+
+
+    footer {
+      text-align: center;
+      padding: 24px;
+      color: var(--ink-dim);
+      font-size: 0.78rem;
+    }
+
+
+    @media (
+      max-width: 520px
+    ) {
+
+      header {
+        padding: 17px 18px;
+      }
+
+      main {
+        padding:
+          24px 16px 50px;
+      }
+
+      .top-row {
+        align-items: flex-start;
+      }
+
+      .button-row .btn {
+        flex: 1;
+      }
+
+      .rep-row {
+        grid-template-columns:
+          48px
+          1fr
+          auto;
+        padding: 15px;
+      }
+
+    }
+
   </style>
+
 </head>
+
+
 <body>
 
-  <header>
-    <h1>Athletics Timing Dashboard</h1>
-    <p class="subhead">Session ID: -P01tCM7gaRQbBDx3JEu</p>
-  </header>
 
-  <div class="container">
-    <!-- Enable Audio Button -->
-    <div class="card">
-      <button id="audioBtn" class="btn-audio" onclick="enableAudio()">Enable Audio Cues</button>
-    </div>
+<header>
 
-    <!-- Live Status Display -->
-    <div class="card status-box">
-      <div class="status-label">Current Status</div>
-      <div id="statusBadge" class="status-badge">STANDBY</div>
-    </div>
+  <div class="brand">
 
-    <!-- Recorded Reps -->
-    <div class="card">
-      <div class="status-label" style="margin-bottom: 12px;">Completed Reps</div>
-      <table>
-        <thead>
-          <tr>
-            <th>Rep #</th>
-            <th>Time</th>
-            <th>Rest Before</th>
-          </tr>
-        </thead>
-        <tbody id="repsTableBody">
-          <tr>
-            <td colspan="3" class="empty-state">Waiting for timing data...</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <span class="mark">
+      ⟨/⟩
+    </span>
+
+    <h1>
+      Training Session
+    </h1>
+
   </div>
 
-  <script>
-    // ============================================================
-    // FIREBASE CONFIGURATION
-    // ============================================================
-    const firebaseConfig = {
-      databaseURL: "https://athletics-coach-d0b26-default-rtdb.europe-west1.firebasedatabase.app"
-    };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+  <div
+    class="status"
+    id="connectionStatus"
+  >
 
-    const TEST_UID = "OckrD0RsTXXAAwYTxmdRnRXFOtc2";
-    const TEST_SESSION_ID = "-P01tCM7gaRQbBDx3JEu";
-    const sessionRef = db.ref(`sessions/${TEST_UID}/${TEST_SESSION_ID}`);
+    <span class="dot"></span>
 
-    // ============================================================
-    // WEB AUDIO & SPEECH SYNTHESIS ENGINE
-    // ============================================================
-    let audioCtx = null;
-    let audioEnabled = false;
+    <span id="connectionLabel">
+      Connecting…
+    </span>
 
-    function enableAudio() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  </div>
+
+</header>
+
+
+<main>
+
+
+  <!-- =========================================================
+       LOGIN
+       ========================================================= -->
+
+  <div id="loginView">
+
+    <h2>
+      Athlete login
+    </h2>
+
+
+    <label for="email">
+      Email
+    </label>
+
+    <input
+      id="email"
+      type="email"
+      placeholder="you@example.com"
+    >
+
+
+    <label for="password">
+      Password
+    </label>
+
+    <input
+      id="password"
+      type="password"
+      placeholder="••••••••"
+    >
+
+
+    <button
+      class="btn btn-primary"
+      id="loginBtn"
+    >
+      Log in
+    </button>
+
+
+    <div id="loginError"></div>
+
+  </div>
+
+
+  <!-- =========================================================
+       DASHBOARD
+       ========================================================= -->
+
+  <div id="appView">
+
+
+    <div class="top-row">
+
+      <div>
+
+        <p
+          class="athlete-name"
+          id="athleteName"
+        >
+          —
+        </p>
+
+
+        <p
+          class="athlete-sub"
+          id="athleteEmail"
+        >
+          —
+        </p>
+
+      </div>
+
+
+      <button
+        class="btn btn-outline"
+        id="logoutBtn"
+      >
+        Log out
+      </button>
+
+    </div>
+
+
+    <div
+      class="session-panel"
+      id="sessionPanel"
+    >
+    </div>
+
+
+    <div
+      class="lanes"
+      id="repsList"
+    >
+    </div>
+
+
+  </div>
+
+</main>
+
+
+<footer>
+
+  IoT Athletics Track Coaching Assistant —
+  session control &amp; live monitor
+
+</footer>
+
+
+<script type="module">
+
+
+// ================================================================
+// FIREBASE
+// ================================================================
+
+import {
+  initializeApp
+} from
+  "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+
+
+import {
+  getDatabase,
+  ref,
+  onValue,
+  set,
+  update,
+  push,
+  serverTimestamp
+} from
+  "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+
+
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from
+  "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+
+
+// ================================================================
+// FIREBASE CONFIG
+// ================================================================
+
+const firebaseConfig = {
+
+  apiKey:
+    "AIzaSyAlYe_Gmmy8B9mxCgVo5PdIZ4y1tndyCis",
+
+  authDomain:
+    "athletics-coach-d0b26.firebaseapp.com",
+
+  databaseURL:
+    "https://athletics-coach-d0b26-default-rtdb.europe-west1.firebasedatabase.app/",
+
+  projectId:
+    "athletics-coach-d0b26"
+};
+
+
+const app =
+  initializeApp(
+    firebaseConfig
+  );
+
+
+const auth =
+  getAuth(app);
+
+
+const database =
+  getDatabase(app);
+
+
+// ================================================================
+// DOM
+// ================================================================
+
+const loginView =
+  document.getElementById(
+    "loginView"
+  );
+
+
+const appView =
+  document.getElementById(
+    "appView"
+  );
+
+
+const emailInput =
+  document.getElementById(
+    "email"
+  );
+
+
+const passwordInput =
+  document.getElementById(
+    "password"
+  );
+
+
+const loginBtn =
+  document.getElementById(
+    "loginBtn"
+  );
+
+
+const loginError =
+  document.getElementById(
+    "loginError"
+  );
+
+
+const logoutBtn =
+  document.getElementById(
+    "logoutBtn"
+  );
+
+
+const athleteName =
+  document.getElementById(
+    "athleteName"
+  );
+
+
+const athleteEmail =
+  document.getElementById(
+    "athleteEmail"
+  );
+
+
+const sessionPanel =
+  document.getElementById(
+    "sessionPanel"
+  );
+
+
+const repsList =
+  document.getElementById(
+    "repsList"
+  );
+
+
+const connectionStatus =
+  document.getElementById(
+    "connectionStatus"
+  );
+
+
+const connectionLabel =
+  document.getElementById(
+    "connectionLabel"
+  );
+
+
+// ================================================================
+// STATE
+// ================================================================
+
+let currentUid = null;
+
+let activeSessionId = null;
+
+let repsUnsub = null;
+
+let statusUnsub = null;
+
+let sessionsUnsub = null;
+
+let lastStatus = null;
+
+let audioContext = null;
+
+
+// ================================================================
+// AUDIO UNLOCK
+// ================================================================
+
+function unlockAudio() {
+
+  const AudioContextClass =
+    window.AudioContext ||
+    window.webkitAudioContext;
+
+
+  if (
+    !AudioContextClass
+  ) {
+
+    console.error(
+      "Web Audio API is not supported."
+    );
+
+    return;
+  }
+
+
+  if (
+    !audioContext
+  ) {
+
+    audioContext =
+      new AudioContextClass();
+  }
+
+
+  if (
+    audioContext.state ===
+    "suspended"
+  ) {
+
+    audioContext.resume();
+  }
+
+
+  console.log(
+    "Audio state:",
+    audioContext.state
+  );
+}
+
+
+// ================================================================
+// TONE
+// ================================================================
+
+function playTone(
+  frequency,
+  duration,
+  delay = 0
+) {
+
+  if (
+    !audioContext
+  ) {
+
+    unlockAudio();
+  }
+
+
+  if (
+    !audioContext
+  ) {
+
+    return;
+  }
+
+
+  const startTime =
+    audioContext.currentTime +
+    delay;
+
+
+  const oscillator =
+    audioContext.createOscillator();
+
+
+  const gain =
+    audioContext.createGain();
+
+
+  oscillator.type =
+    "sine";
+
+
+  oscillator.frequency.setValueAtTime(
+    frequency,
+    startTime
+  );
+
+
+  gain.gain.setValueAtTime(
+    0.0001,
+    startTime
+  );
+
+
+  gain.gain.exponentialRampToValueAtTime(
+    0.35,
+    startTime + 0.01
+  );
+
+
+  gain.gain.exponentialRampToValueAtTime(
+    0.0001,
+    startTime + duration
+  );
+
+
+  oscillator.connect(
+    gain
+  );
+
+
+  gain.connect(
+    audioContext.destination
+  );
+
+
+  oscillator.start(
+    startTime
+  );
+
+
+  oscillator.stop(
+    startTime +
+    duration +
+    0.02
+  );
+}
+
+
+// ================================================================
+// SPEECH
+// ================================================================
+
+function speak(
+  text
+) {
+
+  if (
+    !("speechSynthesis" in window)
+  ) {
+
+    console.warn(
+      "Speech synthesis is not supported."
+    );
+
+    return;
+  }
+
+
+  window.speechSynthesis.cancel();
+
+
+  const utterance =
+    new SpeechSynthesisUtterance(
+      text
+    );
+
+
+  utterance.rate =
+    1.1;
+
+
+  utterance.pitch =
+    1;
+
+
+  utterance.volume =
+    1;
+
+
+  window.speechSynthesis.speak(
+    utterance
+  );
+}
+
+
+// ================================================================
+// GO CUE
+// ================================================================
+
+function playGoCue() {
+
+  // Two short tones.
+  playTone(
+    880,
+    0.12,
+    0
+  );
+
+
+  playTone(
+    1175,
+    0.20,
+    0.18
+  );
+
+
+  setTimeout(
+    () => {
+      speak("Go");
+    },
+    450
+  );
+}
+
+
+// ================================================================
+// READY CUE
+// ================================================================
+
+function playReadyCue() {
+
+  playTone(
+    660,
+    0.18,
+    0
+  );
+
+
+  setTimeout(
+    () => {
+      speak("Get ready");
+    },
+    250
+  );
+}
+
+
+// ================================================================
+// REST CUE
+// ================================================================
+
+function playRestCue() {
+
+  playTone(
+    440,
+    0.18,
+    0
+  );
+
+
+  setTimeout(
+    () => {
+      speak("Rest");
+    },
+    250
+  );
+}
+
+
+// ================================================================
+// FINISHED CUE
+// ================================================================
+
+function playFinishedCue() {
+
+  playTone(
+    660,
+    0.12,
+    0
+  );
+
+
+  playTone(
+    880,
+    0.12,
+    0.15
+  );
+
+
+  playTone(
+    1047,
+    0.25,
+    0.30
+  );
+
+
+  setTimeout(
+    () => {
+      speak(
+        "Session finished"
+      );
+    },
+    550
+  );
+}
+
+
+// ================================================================
+// FIREBASE CONNECTION INDICATOR
+// ================================================================
+
+onValue(
+  ref(
+    database,
+    ".info/connected"
+  ),
+  (snap) => {
+
+    const connected =
+      snap.val() === true;
+
+
+    connectionStatus.classList.toggle(
+      "connected",
+      connected
+    );
+
+
+    connectionLabel.textContent =
+      connected
+        ? "Live"
+        : "Connecting…";
+  }
+);
+
+
+// ================================================================
+// AUTHENTICATION
+// ================================================================
+
+loginBtn.addEventListener(
+  "click",
+  async () => {
+
+    loginError.textContent =
+      "";
+
+
+    try {
+
+      await signInWithEmailAndPassword(
+        auth,
+        emailInput.value.trim(),
+        passwordInput.value
+      );
+
+    } catch (err) {
+
+      console.error(
+        err
+      );
+
+
+      loginError.textContent =
+        "Login failed — check email and password.";
+    }
+  }
+);
+
+
+logoutBtn.addEventListener(
+  "click",
+  () => {
+
+    signOut(
+      auth
+    );
+  }
+);
+
+
+// ================================================================
+// AUTH STATE
+// ================================================================
+
+onAuthStateChanged(
+  auth,
+  (user) => {
+
+    cleanupSessionListeners();
+
+
+    if (
+      sessionsUnsub
+    ) {
+
+      sessionsUnsub();
+
+      sessionsUnsub =
+        null;
+    }
+
+
+    if (
+      !user
+    ) {
+
+      currentUid =
+        null;
+
+
+      activeSessionId =
+        null;
+
+
+      lastStatus =
+        null;
+
+
+      loginView.style.display =
+        "block";
+
+
+      appView.style.display =
+        "none";
+
+
+      return;
+    }
+
+
+    currentUid =
+      user.uid;
+
+
+    loginView.style.display =
+      "none";
+
+
+    appView.style.display =
+      "block";
+
+
+    const displayName =
+      user.email
+        .split("@")[0];
+
+
+    athleteName.textContent =
+      displayName;
+
+
+    athleteEmail.textContent =
+      user.email;
+
+
+    // Keep athlete profile available
+    // for the coaching application.
+    update(
+      ref(
+        database,
+        `athletes/${user.uid}`
+      ),
+      {
+        name:
+          displayName,
+
+        email:
+          user.email
       }
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
+    );
+
+
+    watchForActiveSession(
+      user.uid
+    );
+  }
+);
+
+
+// ================================================================
+// LIVE SESSION STATUS
+// ================================================================
+
+function isLiveSessionStatus(
+  status
+) {
+
+  return [
+    "active",
+    "get_ready",
+    "go",
+    "resting"
+  ].includes(
+    status
+  );
+}
+
+
+// ================================================================
+// WATCH FOR ACTIVE SESSION
+// ================================================================
+
+function watchForActiveSession(
+  uid
+) {
+
+  if (
+    sessionsUnsub
+  ) {
+
+    sessionsUnsub();
+
+    sessionsUnsub =
+      null;
+  }
+
+
+  sessionsUnsub =
+    onValue(
+      ref(
+        database,
+        `sessions/${uid}`
+      ),
+      (snapshot) => {
+
+        const sessions =
+          snapshot.val() || {};
+
+
+        const liveEntry =
+          Object.entries(
+            sessions
+          ).find(
+            ([, session]) =>
+              isLiveSessionStatus(
+                session.status
+              )
+          );
+
+
+        if (
+          liveEntry
+        ) {
+
+          const sessionId =
+            liveEntry[0];
+
+
+          const sessionData =
+            liveEntry[1];
+
+
+          if (
+            activeSessionId !==
+            sessionId
+          ) {
+
+            activeSessionId =
+              sessionId;
+
+
+            lastStatus =
+              null;
+
+
+            renderActiveSession(
+              uid,
+              sessionId,
+              sessionData
+            );
+
+          } else {
+
+            updateCueDisplay(
+              sessionData.status
+            );
+          }
+
+        } else {
+
+          activeSessionId =
+            null;
+
+
+          lastStatus =
+            null;
+
+
+          renderNoActiveSession();
+        }
       }
-      audioEnabled = true;
+    );
+}
 
-      const btn = document.getElementById('audioBtn');
-      btn.textContent = 'Audio Enabled';
-      btn.classList.add('active');
 
-      // Test chime to confirm audio interaction
-      playTone(523.25, 0.1, 0);
-    }
+// ================================================================
+// NO ACTIVE SESSION
+// ================================================================
 
-    function playTone(freq, duration, delay = 0) {
-      if (!audioCtx || !audioEnabled) return;
+function renderNoActiveSession() {
 
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
+  cleanupSessionListeners();
 
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
 
-      gain.gain.setValueAtTime(0.15, audioCtx.currentTime + delay);
-      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + delay + duration);
+  sessionPanel.innerHTML = `
 
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
+    <span class="badge">
+      no active session
+    </span>
 
-      osc.start(audioCtx.currentTime + delay);
-      osc.stop(audioCtx.currentTime + delay + duration);
-    }
 
-    function speak(text) {
-      if (!audioEnabled || !('speechSynthesis' in window)) return;
-      window.speechSynthesis.cancel();
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.rate = 1.1;
-      window.speechSynthesis.speak(utter);
-    }
+    <div
+      class="rep-count-label"
+      style="margin-bottom:16px;"
+    >
+      Start a session before training begins.
+    </div>
 
-    // ============================================================
-    // AUDIO CUE FUNCTIONS
-    // ============================================================
-    function playReadyCue() {
-      playTone(660, 0.18, 0);
-      setTimeout(() => {
-        speak("Get ready");
-      }, 250);
-    }
 
-    function playGoCue() {
-      playTone(1175, 0.20, 0);
-      setTimeout(() => {
-        speak("Go");
-      }, 200);
-    }
+    <button
+      class="btn btn-primary"
+      id="beginBtn"
+    >
+      Begin session
+    </button>
 
-    // ============================================================
-    // FIREBASE LISTENERS
-    // ============================================================
-    let lastStatus = "";
+  `;
 
-    sessionRef.child('status').on('value', (snapshot) => {
-      const status = snapshot.val();
-      if (!status || status === lastStatus) return;
 
-      lastStatus = status;
-      updateStatusDisplay(status);
+  document
+    .getElementById(
+      "beginBtn"
+    )
+    .addEventListener(
+      "click",
+      async () => {
 
-      if (status === 'get_ready') {
-        playReadyCue();
-      } else if (status === 'go') {
+        unlockAudio();
+
+        await beginSession();
+      }
+    );
+
+
+  repsList.innerHTML =
+    "";
+}
+
+
+// ================================================================
+// ACTIVE SESSION
+// ================================================================
+
+function renderActiveSession(
+  uid,
+  sessionId,
+  sessionData
+) {
+
+  sessionPanel.innerHTML = `
+
+    <span class="badge live">
+      session live
+    </span>
+
+
+    <div
+      class="rep-count"
+      id="repCount"
+    >
+      0
+    </div>
+
+
+    <div class="rep-count-label">
+      rep(s) completed
+    </div>
+
+
+    <div
+      class="cue-status"
+      id="cueStatus"
+    >
+      Current status:
+      ${sessionData.status || "active"}
+    </div>
+
+
+    <div class="button-row">
+
+      <button
+        class="btn btn-primary"
+        id="testSoundBtn"
+      >
+        Test GO Sound
+      </button>
+
+
+      <button
+        class="btn btn-end"
+        id="endBtn"
+      >
+        End session
+      </button>
+
+    </div>
+
+  `;
+
+
+  // --------------------------------------------------------------
+  // TEST GO SOUND
+  // --------------------------------------------------------------
+
+  document
+    .getElementById(
+      "testSoundBtn"
+    )
+    .addEventListener(
+      "click",
+      () => {
+
+        unlockAudio();
+
         playGoCue();
-      } else if (status === 'resting') {
-        speak("Rest");
-      } else if (status === 'finished') {
-        speak("Session complete");
-      } else if (status === 'stopped') {
-        speak("Run aborted");
       }
-    });
+    );
 
-    sessionRef.child('reps').on('value', (snapshot) => {
-      const repsData = snapshot.val();
-      updateRepsTable(repsData);
-    });
 
-    // ============================================================
-    // UI UPDATES
-    // ============================================================
-    function updateStatusDisplay(status) {
-      const badge = document.getElementById('statusBadge');
-      badge.textContent = status.replace('_', ' ');
-      badge.className = 'status-badge ' + status;
-    }
+  // --------------------------------------------------------------
+  // END SESSION
+  // --------------------------------------------------------------
 
-    function updateRepsTable(reps) {
-      const tbody = document.getElementById('repsTableBody');
-      if (!reps) {
-        tbody.innerHTML = `<tr><td colspan="3" class="empty-state">No reps recorded yet.</td></tr>`;
-        return;
+  document
+    .getElementById(
+      "endBtn"
+    )
+    .addEventListener(
+      "click",
+      endSession
+    );
+
+
+  watchReps(
+    uid,
+    sessionId
+  );
+
+
+  watchSessionStatus(
+    uid,
+    sessionId
+  );
+}
+
+
+// ================================================================
+// REP LISTENER
+// ================================================================
+
+function watchReps(
+  uid,
+  sessionId
+) {
+
+  if (
+    repsUnsub
+  ) {
+
+    repsUnsub();
+
+    repsUnsub =
+      null;
+  }
+
+
+  const repsRef =
+    ref(
+      database,
+      `sessions/${uid}/${sessionId}/reps`
+    );
+
+
+  repsUnsub =
+    onValue(
+      repsRef,
+      (snapshot) => {
+
+        const reps =
+          snapshot.val() || {};
+
+
+        const repIds =
+          Object.keys(
+            reps
+          ).sort(
+            (a, b) =>
+              Number(a) -
+              Number(b)
+          );
+
+
+        const countEl =
+          document.getElementById(
+            "repCount"
+          );
+
+
+        if (
+          countEl
+        ) {
+
+          countEl.textContent =
+            repIds.length;
+        }
+
+
+        if (
+          repIds.length === 0
+        ) {
+
+          repsList.innerHTML = `
+
+            <div class="empty-state">
+              Waiting on the timing box
+              for the first rep…
+            </div>
+
+          `;
+
+          return;
+        }
+
+
+        repsList.innerHTML =
+          repIds
+            .map(
+              (id) => {
+
+                const rep =
+                  reps[id];
+
+
+                const restNote =
+                  rep.restBefore != null &&
+                  Number(
+                    rep.restBefore
+                  ) > 0
+
+                    ? `${Number(
+                        rep.restBefore
+                      ).toFixed(0)}s rest before this rep`
+
+                    : "first rep";
+
+
+                return `
+
+                  <div class="rep-row">
+
+                    <span class="rep-num">
+                      #${Number(id) + 1}
+                    </span>
+
+
+                    <div>
+
+                      <div class="rep-rest">
+                        ${restNote}
+                      </div>
+
+                    </div>
+
+
+                    <span class="rep-time">
+                      ${Number(
+                        rep.time
+                      ).toFixed(2)}s
+                    </span>
+
+                  </div>
+
+                `;
+              }
+            )
+            .join("");
       }
+    );
+}
 
-      let html = '';
-      Object.keys(reps).forEach((repKey) => {
-        const rep = reps[repKey];
-        html += `
-          <tr>
-            <td>Rep ${repKey}</td>
-            <td>${Number(rep.time).toFixed(2)} s</td>
-            <td>${Number(rep.restBefore).toFixed(1)} s</td>
-          </tr>
-        `;
-      });
 
-      tbody.innerHTML = html;
+// ================================================================
+// STATUS LISTENER
+// ================================================================
+
+function watchSessionStatus(
+  uid,
+  sessionId
+) {
+
+  if (
+    statusUnsub
+  ) {
+
+    statusUnsub();
+
+    statusUnsub =
+      null;
+  }
+
+
+  const statusRef =
+    ref(
+      database,
+      `sessions/${uid}/${sessionId}/status`
+    );
+
+
+  statusUnsub =
+    onValue(
+      statusRef,
+      (snapshot) => {
+
+        const newStatus =
+          snapshot.val();
+
+
+        if (
+          !newStatus
+        ) {
+
+          return;
+        }
+
+
+        updateCueDisplay(
+          newStatus
+        );
+
+
+        // Do not repeat a cue
+        // for the same Firebase value.
+
+        if (
+          newStatus ===
+          lastStatus
+        ) {
+
+          return;
+        }
+
+
+        console.log(
+          "Session status changed:",
+          lastStatus,
+          "→",
+          newStatus
+        );
+
+
+        lastStatus =
+          newStatus;
+
+
+        switch (
+          newStatus
+        ) {
+
+          case "get_ready":
+
+            playReadyCue();
+
+            break;
+
+
+          case "go":
+
+            playGoCue();
+
+            break;
+
+
+          case "resting":
+
+            playRestCue();
+
+            break;
+
+
+          case "finished":
+
+            playFinishedCue();
+
+            break;
+
+
+          case "active":
+
+            // No audio for initial session state.
+
+            break;
+
+
+          case "stopped":
+
+            // No additional cue.
+
+            break;
+
+
+          default:
+
+            console.log(
+              "No audio cue configured for:",
+              newStatus
+            );
+        }
+      }
+    );
+}
+
+
+// ================================================================
+// STATUS DISPLAY
+// ================================================================
+
+function updateCueDisplay(
+  status
+) {
+
+  const cueStatus =
+    document.getElementById(
+      "cueStatus"
+    );
+
+
+  if (
+    cueStatus
+  ) {
+
+    cueStatus.textContent =
+      `Current status: ${status}`;
+  }
+}
+
+
+// ================================================================
+// CLEANUP
+// ================================================================
+
+function cleanupSessionListeners() {
+
+  if (
+    repsUnsub
+  ) {
+
+    repsUnsub();
+
+    repsUnsub =
+      null;
+  }
+
+
+  if (
+    statusUnsub
+  ) {
+
+    statusUnsub();
+
+    statusUnsub =
+      null;
+  }
+}
+
+
+// ================================================================
+// CREATE SESSION
+// ================================================================
+
+async function beginSession() {
+
+  const newRef =
+    push(
+      ref(
+        database,
+        `sessions/${currentUid}`
+      )
+    );
+
+
+  await set(
+    newRef,
+    {
+      status:
+        "active",
+
+      startedAt:
+        serverTimestamp()
     }
-  </script>
+  );
+}
+
+
+// ================================================================
+// END SESSION
+// ================================================================
+
+async function endSession() {
+
+  if (
+    !currentUid ||
+    !activeSessionId
+  ) {
+
+    return;
+  }
+
+
+  await update(
+    ref(
+      database,
+      `sessions/${currentUid}/${activeSessionId}`
+    ),
+    {
+      status:
+        "completed",
+
+      endedAt:
+        serverTimestamp()
+    }
+  );
+}
+
+
+</script>
+
 </body>
+
 </html>
