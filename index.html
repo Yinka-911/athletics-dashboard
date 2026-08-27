@@ -800,8 +800,8 @@ function renderNoActiveSession() {
         Timing Box
       </label>
       <select id="boxSelect" style="width: 100%; max-width: 200px; padding: 8px 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; color: var(--ink); font-family: inherit;">
-        <option value="Box_01" selected>Box_01</option>
-        <option value="Box_02">Box_02</option>
+        <option value="BOX_01" selected>BOX_01</option>
+        <option value="BOX_02">BOX_02</option>
       </select>
     </div>
 
@@ -1131,7 +1131,7 @@ function cleanupSessionListeners() {
 // CREATE SESSION
 // ================================================================
 
-async function beginSession(boxId = "Box_01") {
+async function beginSession(boxId = "BOX_01") {
   currentBoxId = boxId;
 
   try {
@@ -1145,7 +1145,7 @@ async function beginSession(boxId = "Box_01") {
       startedAt: serverTimestamp()
     });
 
-    // 2. Link timing box in Firebase
+    // 2. Link timing box in Firebase using all-caps key
     await set(ref(database, `boxes/${boxId}`), {
       activeUid: currentUid,
       activeSessionId: newSessionId,
