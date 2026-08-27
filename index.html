@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -82,11 +81,9 @@
       0% {
         box-shadow: 0 0 0 0 rgba(76, 175, 109, 0.5);
       }
-
       70% {
         box-shadow: 0 0 0 8px rgba(76, 175, 109, 0);
       }
-
       100% {
         box-shadow: 0 0 0 0 rgba(76, 175, 109, 0);
       }
@@ -295,7 +292,6 @@
       font-size: 0.78rem;
     }
   </style>
-
 </head>
 
 <body>
@@ -315,47 +311,31 @@
 <main>
 
   <!-- LOGIN -->
-
   <div id="loginView">
     <h2>Athlete login</h2>
 
     <label for="email">Email</label>
-    <input id="email" type="email" placeholder="you@example.com">
+    <input id="email" type="email" autocomplete="username" placeholder="you@example.com">
 
     <label for="password">Password</label>
-    <input id="password" type="password" placeholder="••••••••">
+    <input id="password" type="password" autocomplete="current-password" placeholder="••••••••">
 
-    <button class="btn btn-primary" id="loginBtn">
-      Log in
-    </button>
-
+    <button class="btn btn-primary" id="loginBtn">Log in</button>
     <div id="loginError"></div>
-
   </div>
 
   <!-- DASHBOARD -->
-
   <div id="appView">
-
     <div class="top-row">
       <div>
         <p class="athlete-name" id="athleteName">—</p>
         <p class="athlete-sub" id="athleteEmail">—</p>
       </div>
-
-      <button class="btn btn-outline" id="logoutBtn">
-        Log out
-      </button>
+      <button class="btn btn-outline" id="logoutBtn">Log out</button>
     </div>
 
-
-    <div class="session-panel" id="sessionPanel">
-    </div>
-
-
-    <div class="lanes" id="repsList">
-    </div>
-
+    <div class="session-panel" id="sessionPanel"></div>
+    <div class="lanes" id="repsList"></div>
   </div>
 
 </main>
@@ -365,38 +345,15 @@
 </footer>
 
 <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import { getDatabase, ref, onValue, set, update, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
-import {
-  initializeApp
-} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-
-import {
-  getDatabase,
-  ref,
-  onValue,
-  set,
-  update,
-  push,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
-
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
-
-
-// ================================================================
-// FIREBASE CONFIGURATION
-// ================================================================
-
+// FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyAlYe_Gmmy8B9mxCgVo5PdIZ4y1tndyCis",
   authDomain: "athletics-coach-d0b26.firebaseapp.com",
-  databaseURL:
-    "https://athletics-coach-d0b26-default-rtdb.europe-west1.firebasedatabase.app/",
+  databaseURL: "https://athletics-coach-d0b26-default-rtdb.europe-west1.firebasedatabase.app/",
   projectId: "athletics-coach-d0b26"
 };
 
@@ -404,73 +361,32 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const database = getDatabase(app);
 
-
-// ================================================================
 // DOM
-// ================================================================
-
 const loginView = document.getElementById("loginView");
 const appView = document.getElementById("appView");
-
 const emailInput = document.getElementById("email");
 const passwordInput = document.getElementById("password");
 const loginBtn = document.getElementById("loginBtn");
 const loginError = document.getElementById("loginError");
-
 const logoutBtn = document.getElementById("logoutBtn");
-
 const athleteName = document.getElementById("athleteName");
 const athleteEmail = document.getElementById("athleteEmail");
-
 const sessionPanel = document.getElementById("sessionPanel");
 const repsList = document.getElementById("repsList");
+const connectionStatus = document.getElementById("connectionStatus");
+const connectionLabel = document.getElementById("connectionLabel");
 
-const connectionStatus =
-  document.getElementById("connectionStatus");
-
-const connectionLabel =
-  document.getElementById("connectionLabel");
-
-
-// ================================================================
 // STATE
-// ================================================================
-
 let currentUid = null;
 let activeSessionId = null;
 let currentBoxId = null;
-
 let repsUnsub = null;
 let statusUnsub = null;
 let sessionsUnsub = null;
-
 let lastStatus = null;
-
 let audioContext = null;
 
-
-// Automatically attempt to resume audio when the app regain visibility or focus
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible" && audioContext) {
-    audioContext.resume();
-  }
-});
-
-window.addEventListener("focus", () => {
-  if (audioContext) {
-    audioContext.resume();
-  }
-});
-
-// Unlock audio context on the first touch anywhere on the page
-document.addEventListener("touchstart", unlockAudio, { once: true });
-document.addEventListener("click", unlockAudio, { once: true });
-
-
-// ================================================================
-// AUDIO
-// ================================================================
-
+// AUDIO RELIABILITY FIXES
 function unlockAudio() {
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
   if (!AudioContextClass) return;
@@ -483,7 +399,6 @@ function unlockAudio() {
     audioContext.resume();
   }
 
-  // Play a silent 1-frame buffer to keep mobile audio hardware active
   try {
     const buffer = audioContext.createBuffer(1, 1, 22050);
     const source = audioContext.createBufferSource();
@@ -495,65 +410,45 @@ function unlockAudio() {
   }
 }
 
-
-function playTone(
-  frequency,
-  duration,
-  delay = 0
-) {
-
-  if (!audioContext) {
-    console.error(
-      "Audio has not been unlocked yet."
-    );
-    return;
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && audioContext) {
+    audioContext.resume();
   }
+});
 
-  const startTime =
-    audioContext.currentTime + delay;
+window.addEventListener("focus", () => {
+  if (audioContext) {
+    audioContext.resume();
+  }
+});
 
-  const oscillator =
-    audioContext.createOscillator();
+document.addEventListener("touchstart", unlockAudio, { once: true });
+document.addEventListener("click", unlockAudio, { once: true });
 
-  const gain =
-    audioContext.createGain();
+function playTone(frequency, duration, delay = 0) {
+  if (!audioContext) unlockAudio();
+  if (!audioContext) return;
+
+  const startTime = audioContext.currentTime + delay;
+  const oscillator = audioContext.createOscillator();
+  const gain = audioContext.createGain();
 
   oscillator.type = "sine";
+  oscillator.frequency.setValueAtTime(frequency, startTime);
 
-  oscillator.frequency.setValueAtTime(
-    frequency,
-    startTime
-  );
-
-  gain.gain.setValueAtTime(
-    0.0001,
-    startTime
-  );
-
-  gain.gain.exponentialRampToValueAtTime(
-    0.35,
-    startTime + 0.01
-  );
-
-  gain.gain.exponentialRampToValueAtTime(
-    0.0001,
-    startTime + duration
-  );
+  gain.gain.setValueAtTime(0.0001, startTime);
+  gain.gain.exponentialRampToValueAtTime(0.35, startTime + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
 
   oscillator.connect(gain);
   gain.connect(audioContext.destination);
 
   oscillator.start(startTime);
-  oscillator.stop(
-    startTime + duration + 0.02
-  );
+  oscillator.stop(startTime + duration + 0.02);
 }
-
 
 function speak(text) {
   if (!("speechSynthesis" in window)) return;
-
-  // Cancel pending audio speech queue immediately
   window.speechSynthesis.cancel();
 
   const utterance = new SpeechSynthesisUtterance(text);
@@ -561,186 +456,88 @@ function speak(text) {
   utterance.pitch = 1.0;
   utterance.volume = 1.0;
 
-  // Workaround for iOS Safari speech garbage collection bug
   window.utteranceRef = utterance;
-
   window.speechSynthesis.speak(utterance);
 }
 
-
 function playGoCue() {
-
-  // Two tones.
   playTone(880, 0.12, 0);
   playTone(1175, 0.20, 0.18);
-
-  // Then speak GO.
-  setTimeout(() => {
-    speak("Go");
-  }, 450);
+  setTimeout(() => speak("Go"), 450);
 }
-
 
 function playReadyCue() {
-
   playTone(660, 0.18, 0);
-
-  setTimeout(() => {
-    speak("Get ready");
-  }, 250);
+  setTimeout(() => speak("Get ready"), 250);
 }
-
 
 function playRestCue() {
-
   playTone(440, 0.18, 0);
-
-  setTimeout(() => {
-    speak("Rest");
-  }, 250);
+  setTimeout(() => speak("Rest"), 250);
 }
 
-
 function playFinishedCue() {
-
   playTone(660, 0.12, 0);
   playTone(880, 0.12, 0.15);
   playTone(1047, 0.25, 0.30);
-
-  setTimeout(() => {
-    speak("Session finished");
-  }, 650);
+  setTimeout(() => speak("Session finished"), 650);
 }
 
-
-// ================================================================
 // FIREBASE CONNECTION
-// ================================================================
+onValue(ref(database, ".info/connected"), (snap) => {
+  const connected = snap.val() === true;
+  connectionStatus.classList.toggle("connected", connected);
+  connectionLabel.textContent = connected ? "Live" : "Connecting…";
+});
 
-onValue(
-  ref(database, ".info/connected"),
-  (snap) => {
-
-    const connected =
-      snap.val() === true;
-
-    connectionStatus.classList.toggle(
-      "connected",
-      connected
-    );
-
-    connectionLabel.textContent =
-      connected
-        ? "Live"
-        : "Connecting…";
+// AUTHENTICATION
+loginBtn.addEventListener("click", async () => {
+  loginError.textContent = "";
+  try {
+    await signInWithEmailAndPassword(auth, emailInput.value.trim(), passwordInput.value);
+  } catch (error) {
+    console.error(error);
+    loginError.textContent = "Login failed — check email and password.";
   }
-);
+});
 
+logoutBtn.addEventListener("click", () => signOut(auth));
 
-// ================================================================
-// LOGIN
-// ================================================================
-
-loginBtn.addEventListener(
-  "click",
-  async () => {
-
-    loginError.textContent = "";
-
-    try {
-
-      await signInWithEmailAndPassword(
-        auth,
-        emailInput.value.trim(),
-        passwordInput.value
-      );
-
-    } catch (error) {
-
-      console.error(error);
-
-      loginError.textContent =
-        "Login failed — check email and password.";
-    }
+onAuthStateChanged(auth, (user) => {
+  cleanupSessionListeners();
+  if (sessionsUnsub) {
+    sessionsUnsub();
+    sessionsUnsub = null;
   }
-);
 
-
-logoutBtn.addEventListener(
-  "click",
-  () => signOut(auth)
-);
-
-
-// ================================================================
-// AUTH STATE
-// ================================================================
-
-onAuthStateChanged(
-  auth,
-  (user) => {
-
-    cleanupSessionListeners();
-
-    if (sessionsUnsub) {
-      sessionsUnsub();
-      sessionsUnsub = null;
-    }
-
-    if (!user) {
-
-      currentUid = null;
-      activeSessionId = null;
-      currentBoxId = null;
-      lastStatus = null;
-
-      loginView.style.display = "block";
-      appView.style.display = "none";
-
-      return;
-    }
-
-    currentUid = user.uid;
-
-    loginView.style.display = "none";
-    appView.style.display = "block";
-
-    athleteName.textContent =
-      user.email.split("@")[0];
-
-    athleteEmail.textContent =
-      user.email;
-
-    update(
-      ref(
-        database,
-        `athletes/${user.uid}`
-      ),
-      {
-        name: user.email.split("@")[0],
-        email: user.email
-      }
-    );
-
-    watchForActiveSession(user.uid);
+  if (!user) {
+    currentUid = null;
+    activeSessionId = null;
+    lastStatus = null;
+    loginView.style.display = "block";
+    appView.style.display = "none";
+    return;
   }
-);
 
+  currentUid = user.uid;
+  loginView.style.display = "none";
+  appView.style.display = "block";
 
-// ================================================================
-// SESSION STATUS
-// ================================================================
+  athleteName.textContent = user.email.split("@")[0];
+  athleteEmail.textContent = user.email;
 
+  update(ref(database, `athletes/${user.uid}`), {
+    name: user.email.split("@")[0],
+    email: user.email
+  });
+
+  watchForActiveSession(user.uid);
+});
+
+// SESSION STATUS WATCHER
 function isLiveSessionStatus(status) {
-
-  return [
-    "active",
-    "get_ready",
-    "go",
-    "resting"
-  ].includes(status);
+  return ["active", "get_ready", "go", "resting"].includes(status);
 }
-
 
 function watchForActiveSession(uid) {
   if (sessionsUnsub) {
@@ -748,53 +545,41 @@ function watchForActiveSession(uid) {
     sessionsUnsub = null;
   }
 
-  sessionsUnsub = onValue(
-    ref(database, `sessions/${uid}`),
-    (snapshot) => {
-      const sessions = snapshot.val() || {};
+  sessionsUnsub = onValue(ref(database, `sessions/${uid}`), (snapshot) => {
+    const sessions = snapshot.val() || {};
 
-      // Filter for live statuses and sort by startedAt descending (most recent first)
-      const liveEntry = Object.entries(sessions)
-        .filter(([, session]) => isLiveSessionStatus(session.status))
-        .sort(([, a], [, b]) => (b.startedAt || 0) - (a.startedAt || 0))[0];
+    const liveEntry = Object.entries(sessions)
+      .filter(([, session]) => isLiveSessionStatus(session.status))
+      .sort(([, a], [, b]) => (b.startedAt || 0) - (a.startedAt || 0))[0];
 
-      if (liveEntry) {
-        const sessionId = liveEntry[0];
-        const sessionData = liveEntry[1];
+    if (liveEntry) {
+      const sessionId = liveEntry[0];
+      const sessionData = liveEntry[1];
 
-        if (activeSessionId !== sessionId) {
-          activeSessionId = sessionId;
-          currentBoxId = sessionData.boxId || null;
-          lastStatus = null;
-          renderActiveSession(uid, sessionId, sessionData);
-        } else {
-          updateCueDisplay(sessionData.status);
-        }
-      } else {
-        activeSessionId = null;
-        currentBoxId = null;
+      if (activeSessionId !== sessionId) {
+        activeSessionId = sessionId;
         lastStatus = null;
-        renderNoActiveSession();
+        renderActiveSession(uid, sessionId, sessionData);
+      } else {
+        updateCueDisplay(sessionData.status);
       }
+    } else {
+      activeSessionId = null;
+      lastStatus = null;
+      renderNoActiveSession();
     }
-  );
+  });
 }
 
-
-// ================================================================
-// NO ACTIVE SESSION
-// ================================================================
-
+// RENDER: NO ACTIVE SESSION
 function renderNoActiveSession() {
   cleanupSessionListeners();
 
   sessionPanel.innerHTML = `
     <span class="badge">no active session</span>
-
     <div class="rep-count-label" style="margin-bottom:12px;">
       Select timing box & start session before training begins.
     </div>
-
     <div style="margin-bottom: 16px;">
       <label for="boxSelect" style="display:block; font-size: 0.78rem; color: var(--ink-dim); text-transform: uppercase; margin-bottom: 6px;">
         Timing Box
@@ -804,338 +589,123 @@ function renderNoActiveSession() {
         <option value="BOX_02">BOX_02</option>
       </select>
     </div>
-
     <button class="btn btn-primary" id="beginBtn">
       Begin session
     </button>
   `;
 
-  document.getElementById("beginBtn").addEventListener("click", () => {
+  document.getElementById("beginBtn").addEventListener("click", async () => {
     unlockAudio();
     const selectedBox = document.getElementById("boxSelect").value;
-    beginSession(selectedBox);
+    await beginSession(selectedBox);
   });
 
   repsList.innerHTML = "";
 }
 
-
-// ================================================================
-// ACTIVE SESSION
-// ================================================================
-
-function renderActiveSession(
-  uid,
-  sessionId,
-  sessionData
-) {
-
+// RENDER: ACTIVE SESSION
+function renderActiveSession(uid, sessionId, sessionData) {
   sessionPanel.innerHTML = `
-    <span class="badge live">
-      session live
-    </span>
-
-    <div
-      class="rep-count"
-      id="repCount"
-    >
-      0
-    </div>
-
-    <div class="rep-count-label">
-      rep(s) completed
-    </div>
-
-    <div
-      class="cue-status"
-      id="cueStatus"
-    >
-      Current status:
-      ${sessionData.status || "active"}
-    </div>
-
+    <span class="badge live">session live</span>
+    <div class="rep-count" id="repCount">0</div>
+    <div class="rep-count-label">rep(s) completed</div>
+    <div class="cue-status" id="cueStatus">Current status: ${sessionData.status || "active"}</div>
     <div class="button-row">
-
-      <button
-        class="btn btn-primary"
-        id="testSoundBtn"
-      >
-        Test GO Sound
-      </button>
-
-      <button
-        class="btn btn-end"
-        id="endBtn"
-      >
-        End session
-      </button>
-
+      <button class="btn btn-primary" id="testSoundBtn">Test GO Sound</button>
+      <button class="btn btn-end" id="endBtn">End session</button>
     </div>
   `;
 
+  document.getElementById("testSoundBtn").addEventListener("click", () => {
+    unlockAudio();
+    playGoCue();
+  });
 
-  // ------------------------------------------------
-  // TEST GO SOUND BUTTON
-  // ------------------------------------------------
+  document.getElementById("endBtn").addEventListener("click", endSession);
 
-  document
-    .getElementById("testSoundBtn")
-    .addEventListener(
-      "click",
-      () => {
-
-        // Direct button press unlocks audio.
-        unlockAudio();
-
-        // Play immediately while still close to
-        // the user interaction.
-        playGoCue();
-      }
-    );
-
-
-  // ------------------------------------------------
-  // END SESSION BUTTON
-  // ------------------------------------------------
-
-  document
-    .getElementById("endBtn")
-    .addEventListener(
-      "click",
-      endSession
-    );
-
-
-  watchReps(
-    uid,
-    sessionId
-  );
-
-  watchSessionStatus(
-    uid,
-    sessionId
-  );
+  watchReps(uid, sessionId);
+  watchSessionStatus(uid, sessionId);
 }
 
-
-// ================================================================
 // REP LISTENER
-// ================================================================
-
-function watchReps(
-  uid,
-  sessionId
-) {
-
+function watchReps(uid, sessionId) {
   if (repsUnsub) {
     repsUnsub();
     repsUnsub = null;
   }
 
-  repsUnsub = onValue(
-    ref(
-      database,
-      `sessions/${uid}/${sessionId}/reps`
-    ),
-    (snapshot) => {
+  repsUnsub = onValue(ref(database, `sessions/${uid}/${sessionId}/reps`), (snapshot) => {
+    const reps = snapshot.val() || {};
+    const repIds = Object.keys(reps).sort((a, b) => Number(a) - Number(b));
+    const countEl = document.getElementById("repCount");
 
-      const reps =
-        snapshot.val() || {};
+    if (countEl) countEl.textContent = repIds.length;
 
-      const repIds =
-        Object.keys(reps)
-          .sort(
-            (a, b) =>
-              Number(a) - Number(b)
-          );
-
-      const countEl =
-        document.getElementById("repCount");
-
-      if (countEl) {
-        countEl.textContent =
-          repIds.length;
-      }
-
-      if (repIds.length === 0) {
-
-        repsList.innerHTML = `
-          <div class="empty-state">
-            Waiting on the timing box
-            for the first rep…
-          </div>
-        `;
-
-        return;
-      }
-
-      repsList.innerHTML =
-        repIds
-          .map(
-            (id) => {
-
-              const rep =
-                reps[id];
-
-              const restNote =
-                rep.restBefore != null &&
-                Number(rep.restBefore) > 0
-
-                  ? `${Number(
-                      rep.restBefore
-                    ).toFixed(0)}s rest before this rep`
-
-                  : "first rep";
-
-              return `
-                <div class="rep-row">
-
-                  <span class="rep-num">
-                    #${Number(id) + 1}
-                  </span>
-
-                  <div>
-                    <div class="rep-rest">
-                      ${restNote}
-                    </div>
-                  </div>
-
-                  <span class="rep-time">
-                    ${Number(
-                      rep.time
-                    ).toFixed(2)}s
-                  </span>
-
-                </div>
-              `;
-            }
-          )
-          .join("");
+    if (repIds.length === 0) {
+      repsList.innerHTML = `<div class="empty-state">Waiting on the timing box for the first rep…</div>`;
+      return;
     }
-  );
+
+    repsList.innerHTML = repIds.map((id) => {
+      const rep = reps[id];
+      const restNote = rep.restBefore != null && Number(rep.restBefore) > 0
+        ? `${Number(rep.restBefore).toFixed(0)}s rest before this rep`
+        : "first rep";
+
+      return `
+        <div class="rep-row">
+          <span class="rep-num">#${Number(id) + 1}</span>
+          <div><div class="rep-rest">${restNote}</div></div>
+          <span class="rep-time">${Number(rep.time).toFixed(2)}s</span>
+        </div>
+      `;
+    }).join("");
+  });
 }
 
-
-// ================================================================
 // STATUS LISTENER
-// ================================================================
-
-function watchSessionStatus(
-  uid,
-  sessionId
-) {
-
+function watchSessionStatus(uid, sessionId) {
   if (statusUnsub) {
     statusUnsub();
     statusUnsub = null;
   }
 
-  statusUnsub = onValue(
-    ref(
-      database,
-      `sessions/${uid}/${sessionId}/status`
-    ),
-    (snapshot) => {
+  statusUnsub = onValue(ref(database, `sessions/${uid}/${sessionId}/status`), (snapshot) => {
+    const newStatus = snapshot.val();
+    if (!newStatus) return;
 
-      const newStatus =
-        snapshot.val();
+    updateCueDisplay(newStatus);
+    if (newStatus === lastStatus) return;
 
-      if (!newStatus) {
-        return;
-      }
+    console.log("Status changed:", lastStatus, "→", newStatus);
+    lastStatus = newStatus;
 
-      updateCueDisplay(newStatus);
-
-      // Do not repeat a sound
-      // for the same Firebase value.
-      if (
-        newStatus === lastStatus
-      ) {
-        return;
-      }
-
-      console.log(
-        "Status changed:",
-        lastStatus,
-        "→",
-        newStatus
-      );
-
-      lastStatus = newStatus;
-
-      switch (newStatus) {
-
-        case "get_ready":
-          playReadyCue();
-          break;
-
-        case "go":
-          playGoCue();
-          break;
-
-        case "resting":
-          playRestCue();
-          break;
-
-        case "finished":
-          playFinishedCue();
-          break;
-
-        case "active":
-          // No sound needed.
-          break;
-
-        default:
-          console.log(
-            "No audio cue configured for:",
-            newStatus
-          );
-      }
+    switch (newStatus) {
+      case "get_ready": playReadyCue(); break;
+      case "go": playGoCue(); break;
+      case "resting": playRestCue(); break;
+      case "finished": playFinishedCue(); break;
+      case "active": break;
+      default: console.log("No audio cue configured for:", newStatus);
     }
-  );
+  });
 }
-
 
 function updateCueDisplay(status) {
-
-  const cueStatus =
-    document.getElementById("cueStatus");
-
-  if (cueStatus) {
-
-    cueStatus.textContent =
-      `Current status: ${status}`;
-  }
+  const cueStatus = document.getElementById("cueStatus");
+  if (cueStatus) cueStatus.textContent = `Current status: ${status}`;
 }
-
-
-// ================================================================
-// CLEANUP
-// ================================================================
 
 function cleanupSessionListeners() {
-
-  if (repsUnsub) {
-    repsUnsub();
-    repsUnsub = null;
-  }
-
-  if (statusUnsub) {
-    statusUnsub();
-    statusUnsub = null;
-  }
+  if (repsUnsub) { repsUnsub(); repsUnsub = null; }
+  if (statusUnsub) { statusUnsub(); statusUnsub = null; }
 }
 
-
-// ================================================================
-// CREATE SESSION
-// ================================================================
-
+// HARDWARE-ALIGNED SESSION ACTIONS
 async function beginSession(boxId = "BOX_01") {
   currentBoxId = boxId;
 
   try {
-    // 1. Create session for the athlete
     const newRef = push(ref(database, `sessions/${currentUid}`));
     const newSessionId = newRef.key;
 
@@ -1145,44 +715,33 @@ async function beginSession(boxId = "BOX_01") {
       startedAt: serverTimestamp()
     });
 
-    // 2. Link timing box in Firebase using all-caps key
-    await set(ref(database, `boxes/${boxId}`), {
-      activeUid: currentUid,
-      activeSessionId: newSessionId,
-      updatedAt: serverTimestamp()
+    await set(ref(database, `devices/${boxId}/active_session`), {
+      uid: currentUid,
+      sessionId: newSessionId
     });
 
-    console.log(`Successfully paired ${boxId} with session ${newSessionId}`);
+    console.log(`Successfully paired ${boxId} -> UID: ${currentUid} | Session: ${newSessionId}`);
   } catch (err) {
     console.error("Firebase write error during beginSession:", err);
   }
 }
 
-
-// ================================================================
-// END SESSION
-// ================================================================
-
 async function endSession() {
   if (!currentUid || !activeSessionId) return;
 
-  // 1. Mark session as completed
   await update(ref(database, `sessions/${currentUid}/${activeSessionId}`), {
     status: "completed",
     endedAt: serverTimestamp()
   });
 
-  // 2. Unlink the physical timing box so it returns to standby
   if (currentBoxId) {
-    await update(ref(database, `boxes/${currentBoxId}`), {
-      activeUid: null,
-      activeSessionId: null,
-      updatedAt: serverTimestamp()
+    await set(ref(database, `devices/${currentBoxId}/active_session`), {
+      uid: "",
+      sessionId: ""
     });
     currentBoxId = null;
   }
 }
-
 </script>
 
 </body>
