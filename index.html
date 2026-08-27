@@ -1,748 +1,342 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Training Session — Track Coaching Assistant</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Athletics Timing Dashboard</title>
+
+  <!-- Firebase v9 Compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
   <style>
     :root {
-      --ink: #EDEDEF;
-      --ink-dim: #9A9AA5;
-      --bg: #15151A;
-      --bg-raised: #1D1D24;
-      --line: #2B2B34;
-      --cinder: #C1442E;
-      --amber: #F2A93B;
-      --live-green: #4CAF6D;
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --text-color: #f8fafc;
+      --accent-color: #38bdf8;
+      --accent-green: #22c55e;
+      --accent-yellow: #eab308;
+      --accent-red: #ef4444;
+      --border-color: #334155;
     }
 
     * {
       box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     }
 
     body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--ink);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       min-height: 100vh;
+      padding: 20px;
     }
 
     header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 20px 28px;
-      border-bottom: 1px solid var(--line);
+      text-align: center;
+      margin-bottom: 24px;
     }
 
-    .brand {
-      display: flex;
-      align-items: baseline;
-      gap: 10px;
+    h1 {
+      font-size: 1.8rem;
+      color: var(--accent-color);
+      margin-bottom: 6px;
     }
 
-    .brand .mark {
-      font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
-      font-weight: 700;
-      font-size: 1.05rem;
-      color: var(--cinder);
-      letter-spacing: 0.04em;
+    .subhead {
+      font-size: 0.9rem;
+      color: #94a3b8;
     }
 
-    .brand h1 {
-      font-size: 1.05rem;
-      font-weight: 600;
-      margin: 0;
-    }
-
-    .status {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.85rem;
-      color: var(--ink-dim);
-    }
-
-    .status .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--ink-dim);
-    }
-
-    .status.connected .dot {
-      background: var(--live-green);
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0% {
-        box-shadow: 0 0 0 0 rgba(76, 175, 109, 0.5);
-      }
-      70% {
-        box-shadow: 0 0 0 8px rgba(76, 175, 109, 0);
-      }
-      100% {
-        box-shadow: 0 0 0 0 rgba(76, 175, 109, 0);
-      }
-    }
-
-    main {
-      max-width: 640px;
-      margin: 0 auto;
-      padding: 32px 24px 64px;
-    }
-
-    #loginView {
-      max-width: 360px;
-      margin: 80px auto 0;
-      padding: 32px;
-      background: var(--bg-raised);
-      border: 1px solid var(--line);
-      border-radius: 10px;
-    }
-
-    #loginView h2 {
-      margin-top: 0;
-      font-size: 1.15rem;
-    }
-
-    #loginView label {
-      display: block;
-      font-size: 0.78rem;
-      color: var(--ink-dim);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin: 16px 0 6px;
-    }
-
-    #loginView input {
+    .container {
       width: 100%;
-      padding: 10px 12px;
-      background: var(--bg);
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      color: var(--ink);
-      font-size: 0.95rem;
-      font-family: inherit;
+      max-width: 600px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
 
-    .btn {
-      display: inline-flex;
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-audio {
+      width: 100%;
+      padding: 14px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #0f172a;
+      background-color: var(--accent-color);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .btn-audio.active {
+      background-color: var(--accent-green);
+      color: #ffffff;
+    }
+
+    .status-box {
+      display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 11px 20px;
-      border-radius: 6px;
-      border: none;
-      font-size: 0.92rem;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: inherit;
-      margin: 4px;
-    }
-
-    .btn-primary {
-      background: var(--cinder);
-      color: #fff;
-    }
-
-    .btn-outline {
-      background: transparent;
-      color: var(--ink-dim);
-      border: 1px solid var(--line);
-    }
-
-    .btn-end {
-      background: transparent;
-      color: var(--cinder);
-      border: 1px solid var(--cinder);
-    }
-
-    #loginBtn {
-      width: 100%;
-      margin-top: 22px;
-    }
-
-    #loginError {
-      color: var(--cinder);
-      font-size: 0.85rem;
-      margin-top: 12px;
-      min-height: 1.2em;
-    }
-
-    #appView {
-      display: none;
-    }
-
-    .top-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 28px;
-    }
-
-    .athlete-name {
-      font-size: 1.3rem;
-      font-weight: 600;
-      margin: 0;
-    }
-
-    .athlete-sub {
-      color: var(--ink-dim);
-      font-size: 0.85rem;
-      margin-top: 2px;
-    }
-
-    .session-panel {
-      background: var(--bg-raised);
-      border: 1px solid var(--line);
-      border-radius: 10px;
       padding: 24px;
-      margin-bottom: 24px;
       text-align: center;
     }
 
-    .session-panel .badge {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 4px;
-      font-size: 0.72rem;
+    .status-label {
+      font-size: 0.85rem;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 14px;
-      border: 1px solid var(--line);
-      color: var(--ink-dim);
+      letter-spacing: 1px;
+      color: #94a3b8;
+      margin-bottom: 8px;
     }
 
-    .session-panel .badge.live {
-      color: var(--live-green);
-      border-color: var(--live-green);
-    }
-
-    .rep-count {
-      font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
-      font-size: 2.4rem;
+    .status-badge {
+      font-size: 1.6rem;
       font-weight: 700;
-      margin: 4px 0;
+      text-transform: uppercase;
+      padding: 8px 20px;
+      border-radius: 20px;
+      background-color: var(--border-color);
+      color: var(--text-color);
+      letter-spacing: 0.5px;
     }
 
-    .rep-count-label {
-      color: var(--ink-dim);
-      font-size: 0.8rem;
+    .status-badge.get_ready { background-color: var(--accent-yellow); color: #0f172a; }
+    .status-badge.go { background-color: var(--accent-green); color: #ffffff; }
+    .status-badge.resting { background-color: var(--accent-color); color: #0f172a; }
+    .status-badge.stopped { background-color: var(--accent-red); color: #ffffff; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
     }
 
-    .cue-status {
-      margin-top: 14px;
-      font-size: 0.8rem;
-      color: var(--amber);
-      min-height: 1.2em;
-    }
-
-    .button-row {
-      margin-top: 18px;
-    }
-
-    .lanes {
-      border-top: 2px solid var(--cinder);
-      margin-top: 8px;
-    }
-
-    .rep-row {
-      display: grid;
-      grid-template-columns: 44px 1fr auto;
-      align-items: center;
-      gap: 14px;
-      padding: 14px 4px;
-      border-bottom: 1px solid var(--line);
+    th, td {
+      padding: 12px 16px;
       text-align: left;
+      border-bottom: 1px solid var(--border-color);
     }
 
-    .rep-num {
-      font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
-      color: var(--amber);
-      font-size: 0.82rem;
-      font-weight: 700;
-    }
-
-    .rep-rest {
-      color: var(--ink-dim);
+    th {
       font-size: 0.8rem;
+      text-transform: uppercase;
+      color: #94a3b8;
+      letter-spacing: 0.5px;
     }
 
-    .rep-time {
-      font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
-      font-size: 1.3rem;
-      font-weight: 700;
-      font-variant-numeric: tabular-nums;
+    td {
+      font-size: 1rem;
+      font-weight: 500;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
     }
 
     .empty-state {
       text-align: center;
-      padding: 40px 20px;
-      color: var(--ink-dim);
-      font-size: 0.9rem;
-    }
-
-    footer {
-      text-align: center;
-      padding: 24px;
-      color: var(--ink-dim);
-      font-size: 0.78rem;
+      color: #64748b;
+      padding: 20px;
     }
   </style>
 </head>
-
 <body>
 
-<header>
-  <div class="brand">
-    <span class="mark">⟨/⟩</span>
-    <h1>Training Session</h1>
-  </div>
+  <header>
+    <h1>Athletics Timing Dashboard</h1>
+    <p class="subhead">Session ID: -P01tCM7gaRQbBDx3JEu</p>
+  </header>
 
-  <div class="status" id="connectionStatus">
-    <span class="dot"></span>
-    <span id="connectionLabel">Connecting…</span>
-  </div>
-</header>
-
-<main>
-
-  <!-- LOGIN -->
-  <div id="loginView">
-    <h2>Athlete login</h2>
-
-    <label for="email">Email</label>
-    <input id="email" type="email" autocomplete="username" placeholder="you@example.com">
-
-    <label for="password">Password</label>
-    <input id="password" type="password" autocomplete="current-password" placeholder="••••••••">
-
-    <button class="btn btn-primary" id="loginBtn">Log in</button>
-    <div id="loginError"></div>
-  </div>
-
-  <!-- DASHBOARD -->
-  <div id="appView">
-    <div class="top-row">
-      <div>
-        <p class="athlete-name" id="athleteName">—</p>
-        <p class="athlete-sub" id="athleteEmail">—</p>
-      </div>
-      <button class="btn btn-outline" id="logoutBtn">Log out</button>
+  <div class="container">
+    <!-- Enable Audio Button -->
+    <div class="card">
+      <button id="audioBtn" class="btn-audio" onclick="enableAudio()">Enable Audio Cues</button>
     </div>
 
-    <div class="session-panel" id="sessionPanel"></div>
-    <div class="lanes" id="repsList"></div>
+    <!-- Live Status Display -->
+    <div class="card status-box">
+      <div class="status-label">Current Status</div>
+      <div id="statusBadge" class="status-badge">STANDBY</div>
+    </div>
+
+    <!-- Recorded Reps -->
+    <div class="card">
+      <div class="status-label" style="margin-bottom: 12px;">Completed Reps</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Rep #</th>
+            <th>Time</th>
+            <th>Rest Before</th>
+          </tr>
+        </thead>
+        <tbody id="repsTableBody">
+          <tr>
+            <td colspan="3" class="empty-state">Waiting for timing data...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
-</main>
+  <script>
+    // ============================================================
+    // FIREBASE CONFIGURATION
+    // ============================================================
+    const firebaseConfig = {
+      databaseURL: "https://athletics-coach-d0b26-default-rtdb.europe-west1.firebasedatabase.app"
+    };
 
-<footer>
-  IoT Athletics Track Coaching Assistant — session control &amp; live monitor
-</footer>
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-import { getDatabase, ref, onValue, set, update, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+    const TEST_UID = "OckrD0RsTXXAAwYTxmdRnRXFOtc2";
+    const TEST_SESSION_ID = "-P01tCM7gaRQbBDx3JEu";
+    const sessionRef = db.ref(`sessions/${TEST_UID}/${TEST_SESSION_ID}`);
 
-// FIREBASE CONFIG
-const firebaseConfig = {
-  apiKey: "AIzaSyAlYe_Gmmy8B9mxCgVo5PdIZ4y1tndyCis",
-  authDomain: "athletics-coach-d0b26.firebaseapp.com",
-  databaseURL: "https://athletics-coach-d0b26-default-rtdb.europe-west1.firebasedatabase.app/",
-  projectId: "athletics-coach-d0b26"
-};
+    // ============================================================
+    // WEB AUDIO & SPEECH SYNTHESIS ENGINE
+    // ============================================================
+    let audioCtx = null;
+    let audioEnabled = false;
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const database = getDatabase(app);
-
-// DOM
-const loginView = document.getElementById("loginView");
-const appView = document.getElementById("appView");
-const emailInput = document.getElementById("email");
-const passwordInput = document.getElementById("password");
-const loginBtn = document.getElementById("loginBtn");
-const loginError = document.getElementById("loginError");
-const logoutBtn = document.getElementById("logoutBtn");
-const athleteName = document.getElementById("athleteName");
-const athleteEmail = document.getElementById("athleteEmail");
-const sessionPanel = document.getElementById("sessionPanel");
-const repsList = document.getElementById("repsList");
-const connectionStatus = document.getElementById("connectionStatus");
-const connectionLabel = document.getElementById("connectionLabel");
-
-// STATE
-let currentUid = null;
-let activeSessionId = null;
-let currentBoxId = null;
-let repsUnsub = null;
-let statusUnsub = null;
-let sessionsUnsub = null;
-let lastStatus = null;
-let audioContext = null;
-
-// AUDIO RELIABILITY FIXES
-function unlockAudio() {
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  if (!AudioContextClass) return;
-
-  if (!audioContext) {
-    audioContext = new AudioContextClass();
-  }
-
-  if (audioContext.state === "suspended") {
-    audioContext.resume();
-  }
-
-  try {
-    const buffer = audioContext.createBuffer(1, 1, 22050);
-    const source = audioContext.createBufferSource();
-    source.buffer = buffer;
-    source.connect(audioContext.destination);
-    source.start(0);
-  } catch (e) {
-    console.warn("Audio buffer unlock skipped", e);
-  }
-}
-
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible" && audioContext) {
-    audioContext.resume();
-  }
-});
-
-window.addEventListener("focus", () => {
-  if (audioContext) {
-    audioContext.resume();
-  }
-});
-
-document.addEventListener("touchstart", unlockAudio, { once: true });
-document.addEventListener("click", unlockAudio, { once: true });
-
-function playTone(frequency, duration, delay = 0) {
-  if (!audioContext) unlockAudio();
-  if (!audioContext) return;
-
-  const startTime = audioContext.currentTime + delay;
-  const oscillator = audioContext.createOscillator();
-  const gain = audioContext.createGain();
-
-  oscillator.type = "sine";
-  oscillator.frequency.setValueAtTime(frequency, startTime);
-
-  gain.gain.setValueAtTime(0.0001, startTime);
-  gain.gain.exponentialRampToValueAtTime(0.35, startTime + 0.01);
-  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
-
-  oscillator.connect(gain);
-  gain.connect(audioContext.destination);
-
-  oscillator.start(startTime);
-  oscillator.stop(startTime + duration + 0.02);
-}
-
-function speak(text) {
-  if (!("speechSynthesis" in window)) return;
-  window.speechSynthesis.cancel();
-
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate = 1.1;
-  utterance.pitch = 1.0;
-  utterance.volume = 1.0;
-
-  window.utteranceRef = utterance;
-  window.speechSynthesis.speak(utterance);
-}
-
-function playGoCue() {
-  playTone(880, 0.12, 0);
-  playTone(1175, 0.20, 0.18);
-  setTimeout(() => speak("Go"), 450);
-}
-
-function playReadyCue() {
-  playTone(660, 0.18, 0);
-  setTimeout(() => speak("Get ready"), 250);
-}
-
-function playRestCue() {
-  playTone(440, 0.18, 0);
-  setTimeout(() => speak("Rest"), 250);
-}
-
-function playFinishedCue() {
-  playTone(660, 0.12, 0);
-  playTone(880, 0.12, 0.15);
-  playTone(1047, 0.25, 0.30);
-  setTimeout(() => speak("Session finished"), 650);
-}
-
-// FIREBASE CONNECTION
-onValue(ref(database, ".info/connected"), (snap) => {
-  const connected = snap.val() === true;
-  connectionStatus.classList.toggle("connected", connected);
-  connectionLabel.textContent = connected ? "Live" : "Connecting…";
-});
-
-// AUTHENTICATION
-loginBtn.addEventListener("click", async () => {
-  loginError.textContent = "";
-  try {
-    await signInWithEmailAndPassword(auth, emailInput.value.trim(), passwordInput.value);
-  } catch (error) {
-    console.error(error);
-    loginError.textContent = "Login failed — check email and password.";
-  }
-});
-
-logoutBtn.addEventListener("click", () => signOut(auth));
-
-onAuthStateChanged(auth, (user) => {
-  cleanupSessionListeners();
-  if (sessionsUnsub) {
-    sessionsUnsub();
-    sessionsUnsub = null;
-  }
-
-  if (!user) {
-    currentUid = null;
-    activeSessionId = null;
-    lastStatus = null;
-    loginView.style.display = "block";
-    appView.style.display = "none";
-    return;
-  }
-
-  currentUid = user.uid;
-  loginView.style.display = "none";
-  appView.style.display = "block";
-
-  athleteName.textContent = user.email.split("@")[0];
-  athleteEmail.textContent = user.email;
-
-  update(ref(database, `athletes/${user.uid}`), {
-    name: user.email.split("@")[0],
-    email: user.email
-  });
-
-  watchForActiveSession(user.uid);
-});
-
-// SESSION STATUS WATCHER
-function isLiveSessionStatus(status) {
-  return ["active", "get_ready", "go", "resting"].includes(status);
-}
-
-function watchForActiveSession(uid) {
-  if (sessionsUnsub) {
-    sessionsUnsub();
-    sessionsUnsub = null;
-  }
-
-  sessionsUnsub = onValue(ref(database, `sessions/${uid}`), (snapshot) => {
-    const sessions = snapshot.val() || {};
-
-    const liveEntry = Object.entries(sessions)
-      .filter(([, session]) => isLiveSessionStatus(session.status))
-      .sort(([, a], [, b]) => (b.startedAt || 0) - (a.startedAt || 0))[0];
-
-    if (liveEntry) {
-      const sessionId = liveEntry[0];
-      const sessionData = liveEntry[1];
-
-      if (activeSessionId !== sessionId) {
-        activeSessionId = sessionId;
-        lastStatus = null;
-        renderActiveSession(uid, sessionId, sessionData);
-      } else {
-        updateCueDisplay(sessionData.status);
+    function enableAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       }
-    } else {
-      activeSessionId = null;
-      lastStatus = null;
-      renderNoActiveSession();
-    }
-  });
-}
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      audioEnabled = true;
 
-// RENDER: NO ACTIVE SESSION
-function renderNoActiveSession() {
-  cleanupSessionListeners();
+      const btn = document.getElementById('audioBtn');
+      btn.textContent = 'Audio Enabled';
+      btn.classList.add('active');
 
-  sessionPanel.innerHTML = `
-    <span class="badge">no active session</span>
-    <div class="rep-count-label" style="margin-bottom:12px;">
-      Select timing box & start session before training begins.
-    </div>
-    <div style="margin-bottom: 16px;">
-      <label for="boxSelect" style="display:block; font-size: 0.78rem; color: var(--ink-dim); text-transform: uppercase; margin-bottom: 6px;">
-        Timing Box
-      </label>
-      <select id="boxSelect" style="width: 100%; max-width: 200px; padding: 8px 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; color: var(--ink); font-family: inherit;">
-        <option value="BOX_01" selected>BOX_01</option>
-        <option value="BOX_02">BOX_02</option>
-      </select>
-    </div>
-    <button class="btn btn-primary" id="beginBtn">
-      Begin session
-    </button>
-  `;
-
-  document.getElementById("beginBtn").addEventListener("click", async () => {
-    unlockAudio();
-    const selectedBox = document.getElementById("boxSelect").value;
-    await beginSession(selectedBox);
-  });
-
-  repsList.innerHTML = "";
-}
-
-// RENDER: ACTIVE SESSION
-function renderActiveSession(uid, sessionId, sessionData) {
-  sessionPanel.innerHTML = `
-    <span class="badge live">session live</span>
-    <div class="rep-count" id="repCount">0</div>
-    <div class="rep-count-label">rep(s) completed</div>
-    <div class="cue-status" id="cueStatus">Current status: ${sessionData.status || "active"}</div>
-    <div class="button-row">
-      <button class="btn btn-primary" id="testSoundBtn">Test GO Sound</button>
-      <button class="btn btn-end" id="endBtn">End session</button>
-    </div>
-  `;
-
-  document.getElementById("testSoundBtn").addEventListener("click", () => {
-    unlockAudio();
-    playGoCue();
-  });
-
-  document.getElementById("endBtn").addEventListener("click", endSession);
-
-  watchReps(uid, sessionId);
-  watchSessionStatus(uid, sessionId);
-}
-
-// REP LISTENER
-function watchReps(uid, sessionId) {
-  if (repsUnsub) {
-    repsUnsub();
-    repsUnsub = null;
-  }
-
-  repsUnsub = onValue(ref(database, `sessions/${uid}/${sessionId}/reps`), (snapshot) => {
-    const reps = snapshot.val() || {};
-    const repIds = Object.keys(reps).sort((a, b) => Number(a) - Number(b));
-    const countEl = document.getElementById("repCount");
-
-    if (countEl) countEl.textContent = repIds.length;
-
-    if (repIds.length === 0) {
-      repsList.innerHTML = `<div class="empty-state">Waiting on the timing box for the first rep…</div>`;
-      return;
+      // Test chime to confirm audio interaction
+      playTone(523.25, 0.1, 0);
     }
 
-    repsList.innerHTML = repIds.map((id) => {
-      const rep = reps[id];
-      const restNote = rep.restBefore != null && Number(rep.restBefore) > 0
-        ? `${Number(rep.restBefore).toFixed(0)}s rest before this rep`
-        : "first rep";
+    function playTone(freq, duration, delay = 0) {
+      if (!audioCtx || !audioEnabled) return;
 
-      return `
-        <div class="rep-row">
-          <span class="rep-num">#${Number(id) + 1}</span>
-          <div><div class="rep-rest">${restNote}</div></div>
-          <span class="rep-time">${Number(rep.time).toFixed(2)}s</span>
-        </div>
-      `;
-    }).join("");
-  });
-}
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
 
-// STATUS LISTENER
-function watchSessionStatus(uid, sessionId) {
-  if (statusUnsub) {
-    statusUnsub();
-    statusUnsub = null;
-  }
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
 
-  statusUnsub = onValue(ref(database, `sessions/${uid}/${sessionId}/status`), (snapshot) => {
-    const newStatus = snapshot.val();
-    if (!newStatus) return;
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + delay + duration);
 
-    updateCueDisplay(newStatus);
-    if (newStatus === lastStatus) return;
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
 
-    console.log("Status changed:", lastStatus, "→", newStatus);
-    lastStatus = newStatus;
-
-    switch (newStatus) {
-      case "get_ready": playReadyCue(); break;
-      case "go": playGoCue(); break;
-      case "resting": playRestCue(); break;
-      case "finished": playFinishedCue(); break;
-      case "active": break;
-      default: console.log("No audio cue configured for:", newStatus);
+      osc.start(audioCtx.currentTime + delay);
+      osc.stop(audioCtx.currentTime + delay + duration);
     }
-  });
-}
 
-function updateCueDisplay(status) {
-  const cueStatus = document.getElementById("cueStatus");
-  if (cueStatus) cueStatus.textContent = `Current status: ${status}`;
-}
+    function speak(text) {
+      if (!audioEnabled || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.rate = 1.1;
+      window.speechSynthesis.speak(utter);
+    }
 
-function cleanupSessionListeners() {
-  if (repsUnsub) { repsUnsub(); repsUnsub = null; }
-  if (statusUnsub) { statusUnsub(); statusUnsub = null; }
-}
+    // ============================================================
+    // AUDIO CUE FUNCTIONS
+    // ============================================================
+    function playReadyCue() {
+      playTone(660, 0.18, 0);
+      setTimeout(() => {
+        speak("Get ready");
+      }, 250);
+    }
 
-// HARDWARE-ALIGNED SESSION ACTIONS
-async function beginSession(boxId = "BOX_01") {
-  currentBoxId = boxId;
+    function playGoCue() {
+      playTone(1175, 0.20, 0);
+      setTimeout(() => {
+        speak("Go");
+      }, 200);
+    }
 
-  try {
-    const newRef = push(ref(database, `sessions/${currentUid}`));
-    const newSessionId = newRef.key;
+    // ============================================================
+    // FIREBASE LISTENERS
+    // ============================================================
+    let lastStatus = "";
 
-    await set(newRef, {
-      status: "active",
-      boxId: boxId,
-      startedAt: serverTimestamp()
+    sessionRef.child('status').on('value', (snapshot) => {
+      const status = snapshot.val();
+      if (!status || status === lastStatus) return;
+
+      lastStatus = status;
+      updateStatusDisplay(status);
+
+      if (status === 'get_ready') {
+        playReadyCue();
+      } else if (status === 'go') {
+        playGoCue();
+      } else if (status === 'resting') {
+        speak("Rest");
+      } else if (status === 'finished') {
+        speak("Session complete");
+      } else if (status === 'stopped') {
+        speak("Run aborted");
+      }
     });
 
-    await set(ref(database, `devices/${boxId}/active_session`), {
-      uid: currentUid,
-      sessionId: newSessionId
+    sessionRef.child('reps').on('value', (snapshot) => {
+      const repsData = snapshot.val();
+      updateRepsTable(repsData);
     });
 
-    console.log(`Successfully paired ${boxId} -> UID: ${currentUid} | Session: ${newSessionId}`);
-  } catch (err) {
-    console.error("Firebase write error during beginSession:", err);
-  }
-}
+    // ============================================================
+    // UI UPDATES
+    // ============================================================
+    function updateStatusDisplay(status) {
+      const badge = document.getElementById('statusBadge');
+      badge.textContent = status.replace('_', ' ');
+      badge.className = 'status-badge ' + status;
+    }
 
-async function endSession() {
-  if (!currentUid || !activeSessionId) return;
+    function updateRepsTable(reps) {
+      const tbody = document.getElementById('repsTableBody');
+      if (!reps) {
+        tbody.innerHTML = `<tr><td colspan="3" class="empty-state">No reps recorded yet.</td></tr>`;
+        return;
+      }
 
-  await update(ref(database, `sessions/${currentUid}/${activeSessionId}`), {
-    status: "completed",
-    endedAt: serverTimestamp()
-  });
+      let html = '';
+      Object.keys(reps).forEach((repKey) => {
+        const rep = reps[repKey];
+        html += `
+          <tr>
+            <td>Rep ${repKey}</td>
+            <td>${Number(rep.time).toFixed(2)} s</td>
+            <td>${Number(rep.restBefore).toFixed(1)} s</td>
+          </tr>
+        `;
+      });
 
-  if (currentBoxId) {
-    await set(ref(database, `devices/${currentBoxId}/active_session`), {
-      uid: "",
-      sessionId: ""
-    });
-    currentBoxId = null;
-  }
-}
-</script>
-
+      tbody.innerHTML = html;
+    }
+  </script>
 </body>
 </html>
