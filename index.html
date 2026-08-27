@@ -444,19 +444,31 @@ let lastStatus = null;
 let audioContext = null;
 
 
+// Automatically attempt to resume audio when the app regain visibility or focus
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && audioContext) {
+    audioContext.resume();
+  }
+});
+
+window.addEventListener("focus", () => {
+  if (audioContext) {
+    audioContext.resume();
+  }
+});
+
+// Unlock audio context on the first touch anywhere on the page
+document.addEventListener("touchstart", unlockAudio, { once: true });
+document.addEventListener("click", unlockAudio, { once: true });
+
+
 // ================================================================
 // AUDIO
 // ================================================================
 
 function unlockAudio() {
-
-  const AudioContextClass =
-    window.AudioContext || window.webkitAudioContext;
-
-  if (!AudioContextClass) {
-    console.error("Web Audio API is not supported.");
-    return;
-  }
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return;
 
   if (!audioContext) {
     audioContext = new AudioContextClass();
@@ -466,10 +478,16 @@ function unlockAudio() {
     audioContext.resume();
   }
 
-  console.log(
-    "Audio state:",
-    audioContext.state
-  );
+  // Play a silent 1-frame buffer to keep mobile audio hardware active
+  try {
+    const buffer = audioContext.createBuffer(1, 1, 22050);
+    const source = audioContext.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioContext.destination);
+    source.start(0);
+  } catch (e) {
+    console.warn("Audio buffer unlock skipped", e);
+  }
 }
 
 
@@ -528,22 +546,18 @@ function playTone(
 
 
 function speak(text) {
+  if (!("speechSynthesis" in window)) return;
 
-  if (!("speechSynthesis" in window)) {
-    console.warn(
-      "Speech synthesis is not supported."
-    );
-    return;
-  }
-
+  // Cancel pending audio speech queue immediately
   window.speechSynthesis.cancel();
 
-  const utterance =
-    new SpeechSynthesisUtterance(text);
-
+  const utterance = new SpeechSynthesisUtterance(text);
   utterance.rate = 1.1;
-  utterance.pitch = 1;
-  utterance.volume = 1;
+  utterance.pitch = 1.0;
+  utterance.volume = 1.0;
+
+  // Workaround for iOS Safari speech garbage collection bug
+  window.utteranceRef = utterance;
 
   window.speechSynthesis.speak(utterance);
 }
