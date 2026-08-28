@@ -18,7 +18,6 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#15151A">
 
-  <!-- iOS home-screen support -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Track Timer">
@@ -478,10 +477,6 @@
 <main>
 
 
-  <!-- =========================================================
-       LOGIN
-       ========================================================= -->
-
   <div id="loginView">
 
     <h2>
@@ -523,10 +518,6 @@
 
   </div>
 
-
-  <!-- =========================================================
-       DASHBOARD
-       ========================================================= -->
 
   <div id="appView">
 
@@ -1684,7 +1675,7 @@ function watchReps(
                   <div class="rep-row">
 
                     <span class="rep-num">
-                      #${Number(id) + 1}
+                      #${repIds.indexOf(id) + 1}
                     </span>
 
 
