@@ -15,15 +15,6 @@
   </title>
 
 
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#15151A">
-
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Track Timer">
-  <link rel="apple-touch-icon" href="icon-192.png">
-
-
   <style>
 
     :root {
@@ -477,6 +468,10 @@
 <main>
 
 
+  <!-- =========================================================
+       LOGIN
+       ========================================================= -->
+
   <div id="loginView">
 
     <h2>
@@ -518,6 +513,10 @@
 
   </div>
 
+
+  <!-- =========================================================
+       DASHBOARD
+       ========================================================= -->
 
   <div id="appView">
 
@@ -748,70 +747,6 @@ let sessionsUnsub = null;
 let lastStatus = null;
 
 let audioContext = null;
-
-let wakeLock = null;
-
-
-// ================================================================
-// WAKE LOCK
-// ================================================================
-// Keeps the screen on for as long as a session is live, so audio
-// cues (which browsers suspend once the screen locks) keep working.
-
-async function requestWakeLock() {
-
-  if (!("wakeLock" in navigator)) {
-    console.warn("Wake Lock API not supported on this browser/OS version.");
-    return;
-  }
-
-  if (wakeLock) {
-    return; // already held
-  }
-
-  try {
-
-    wakeLock = await navigator.wakeLock.request("screen");
-
-    console.log("Wake lock active — screen will stay on.");
-
-    wakeLock.addEventListener("release", () => {
-      console.log("Wake lock released.");
-      wakeLock = null;
-    });
-
-  } catch (err) {
-
-    console.error("Wake lock request failed:", err);
-  }
-}
-
-
-function releaseWakeLock() {
-
-  if (wakeLock) {
-
-    wakeLock.release();
-
-    wakeLock = null;
-  }
-}
-
-
-// Browsers auto-release the wake lock whenever the tab is hidden
-// (e.g. switching apps briefly). Re-acquire it the moment the app
-// becomes visible again, as long as a session is still live.
-document.addEventListener("visibilitychange", async () => {
-
-  if (
-    document.visibilityState === "visible" &&
-    activeSessionId &&
-    !wakeLock
-  ) {
-
-    await requestWakeLock();
-  }
-});
 
 
 // ================================================================
@@ -1408,8 +1343,6 @@ function renderNoActiveSession() {
 
   cleanupSessionListeners();
 
-  releaseWakeLock();
-
 
   sessionPanel.innerHTML = `
 
@@ -1445,8 +1378,6 @@ function renderNoActiveSession() {
       async () => {
 
         unlockAudio();
-
-        await requestWakeLock();
 
         await beginSession();
       }
@@ -1562,11 +1493,6 @@ function renderActiveSession(
     uid,
     sessionId
   );
-
-
-  // Covers reopening the app onto a session that's already live
-  // (not just the initial "Begin session" click).
-  requestWakeLock();
 }
 
 
@@ -1675,7 +1601,7 @@ function watchReps(
                   <div class="rep-row">
 
                     <span class="rep-num">
-                      #${repIds.indexOf(id) + 1}
+                      #${Number(id) + 1}
                     </span>
 
 
@@ -1945,23 +1871,6 @@ async function endSession() {
         serverTimestamp()
     }
   );
-}
-
-
-// ================================================================
-// PWA — SERVICE WORKER
-// ================================================================
-
-if ("serviceWorker" in navigator) {
-
-  window.addEventListener("load", () => {
-
-    navigator.serviceWorker
-      .register("./service-worker.js")
-      .catch((err) => {
-        console.error("Service worker registration failed:", err);
-      });
-  });
 }
 
 
